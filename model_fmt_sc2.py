@@ -28,13 +28,26 @@ class FRead(object): #Generic file reader
             return struct.unpack(self.endian+'f', self.file.read(4))[0]
         def f32_4(self):
             return struct.unpack(self.endian+'f'+self.endian+'f'+self.endian+'f'+self.endian+'f', self.file.read(16))[0:4]
+        def f32_3(self):
+            return struct.unpack(self.endian+'f'+self.endian+'f'+self.endian+'f', self.file.read(12))[0:3]
         def seek(self,offset,whence=0):
             self.file.seek(offset,whence)
         def tell(self):
             self.file.tell()
         def read(self,x):
             self.file.read(x)
-
+        def getString(self,offset = 0):
+            if(offset):
+                ret = self.tell()
+                self.seek(offset)
+            result = ""
+            tmpChar = file.read(1)
+            while ord(tmpChar) != 0:
+                result += tmpChar.decode("utf-8")
+                tmpChar =file.read(1)
+            if(offset):
+                self.seek(ret)
+            return result
 class MTX(object):
     def __init__(self):
         self.matrix = [[0.0,0.0,0.0,0.0]*4]
@@ -42,6 +55,7 @@ class MTX(object):
         tmp = []
         for x in range(4):
             tmp.append(f.f32_4())
+        self.matrix = tmp
 class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
     class Header(object):
         def __init__(self):
@@ -119,11 +133,35 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.unk3 = f.u32()
             self.unk4 = f.u32()
             self.Matrix.read(f)
+    class BoneInfo(object):
+        def __init__(self):
+            self.EndPositionXYZScale = []
+            self.StartPositionXYZScale = []
+            self.Rotation = []
+            self.BoneNameOffset = 0
+            self.unk0 = []
+            self.unk1 = 0
+            self.BoneParentIdx = 0
+            self.BoneIdx = 0
+            self.unk2 = 0
+            self.Name = ""
+        def read(self,f):
+            self.EndPositionXYZScale = f.f32_4()
+            self.StartPositionXYZScale = f.f32_4()
+            self.Rotation = f.f32_3()
+            self.BoneNameOffset = f.u32()
+            self.unk0 = f.f32_3()
+            self.unk1 = f.u8()
+            self.BoneParentIdx = f.u8()
+            self.BoneIdx = f.u8()
+            self.unk2 = f.u8()
+            self.Name = f.getString(self.BoneNameOffset)
     def __init__(self):
         self.f = None
         self.header = self.Header()
         self.unkMtx = self.MatrixUnk()
         self.matrix_table = []
+        self.boneInfo = []
     def read(self,f):
         self.f = FRead(f)
         self.header.read(self.f)
@@ -138,4 +176,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             a.read(f)
             self.matrix_table.append(a)
             f.seek(skipAmount,1)
+        f.seek(self.header.BoneInfo[1])
+        for x in range(self.header.BoneInfo[0]):
+            a = self.BoneInfo()
+            a.read()
+            self.boneInfo.append(a)
+        
         
