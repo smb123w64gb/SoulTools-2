@@ -220,3 +220,55 @@ struct tVector4f{
     float Z;
     float W;
 }[[static,name(std::format("{%6.3f},{%6.3f},{%6.3f},{%6.3f}", X, Y, Z, W))]];
+
+#pragma endian little
+
+import std.io;
+
+struct mdl_header{
+    char MAGIC[4];
+    if(MAGIC == "VMG\x2E") {
+        std::print("Big time!");
+        #pragma endian big
+        }
+    console ConsoleVersion;
+    u32 unk;
+    modelContent Contents;
+        u16 MatricesCount;
+    u16 Objects0Count;
+    u16 Objects1Count;
+    u16 Objects2Count;
+    u16 BonesCount;
+    u16 MaterialsCount;
+    u16 MeshCount; // always 1?
+    u32 TextureTableOffset;
+    u32 MaterialOffset;
+    u32 TextureMapOffset;
+    u32 MatrixTableOffset;
+    u32 ukn_MatrixTableOffset;
+    u32 Object0Offset;
+    u32 Object1Offset;
+    u32 Object2Offset;
+    u32 WeightTableOffset;
+    u32 ukn01_offset;
+    u32 BoneOffset;
+    u32 BoneNameOffset;
+    u32 BoneHeaderOffset;
+};
+
+struct vxt_header{
+char MAGIC[4];
+u8 type;
+u8 flag0;
+u8 flag1;
+u8 padding;
+u32 TexRowCount;
+};
+
+mdl_header SC2_MDL @0;
+
+
+
+
+
+
