@@ -2,6 +2,12 @@
 
 import std.io;
 
+enum palletTypeGCN : u32 {
+        IA8 = 0,
+        RGB565 = 1,
+        RGB5A3 = 2
+};
+
 enum imageTypeGCN : u32 {
     I4     = 0,  //(4 bit intensity, 8x8 tiles)
     I8     = 1,  //(8 bit intensity, 8x4 tiles)
@@ -37,6 +43,13 @@ fn imageSizeGCN(u32 num) {
             (_   )   : return -1;
         }
 };
+
+bitfield rgb565{
+    R : 5;
+    G : 6;
+    B : 5;
+} [[static, color(std::format("{:02X}{:02X}{:02X}", R, G, B))]];
+
 bitfield tDimension{
     X : 10;
     Y : 10;
@@ -49,6 +62,7 @@ struct tVectorColorb {
   u8 B  [[color("0000FF")]];
   u8 A;
 } [[static, color(std::format("{:02X}{:02X}{:02X}", R, G, B))]];
+
 struct textureDataSlice{
 
     u32 unk1;
@@ -63,10 +77,16 @@ struct textureDataSlice{
     u32 unk7;
 };
 
-
 struct textureData{
     u32 TexturePaletteOffset;
     textureDataSlice slices[2];
+};
+
+struct palletData{
+u32 unk0;
+u32 offset;
+le palletTypeGCN palletFormat;
+rgb565 data[256] @ offset;
 };
 
 struct VGT{
@@ -79,6 +99,7 @@ struct VGT{
     u32 HeaderLen;
     u32 HeaderBlockSize;
     textureData txtData[TexCount];
+    palletData pltData[TexCount];
 };
 
 VGT texture @ 0;
