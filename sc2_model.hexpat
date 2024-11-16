@@ -201,25 +201,36 @@ bitfield tDimension{
 
 struct tVectorUVf{
     float X;
-}[[static,name(std::format("{%6.3f},{%6.3f}", X, ((X * -1)+1)))]];
+}[[static,name(std::format("{},{}", X, ((X * -1)+1)))]];
 
 struct tVector2f{
     float X;
     float Y;
-}[[static,name(std::format("{%6.3f},{%6.3f}", X, Y))]];
+}[[static,name(std::format("{},{}", X, Y))]];
 
 struct tVector3f{
     float X;
     float Y;
     float Z;
-}[[static,name(std::format("{%6.3f},{%6.3f},{%6.3f}", X, Y,Z))]];
+}[[static,name(std::format("{},{},{}", X, Y,Z))]];
 
 struct tVector4f{
     float X;
     float Y;
     float Z;
     float W;
-}[[static,name(std::format("{%6.3f},{%6.3f},{%6.3f},{%6.3f}", X, Y, Z, W))]];
+}[[static,name(std::format("{},{},{},{}", X, Y, Z, W))]];
+
+struct matrixTable{
+    u8 Type;
+    u8 ParentBoneIdx; // parent object to this bone?
+    u16 Ukn1;
+    u32 Ukn3; // on stages files an offset is present
+    u32 Ukn4;
+    u32 Ukn5;
+    tVector4f Matrix4x4Transform[4];
+    padding[320]; //64 more than gamecube
+};
 
 #pragma endian little
 
@@ -227,14 +238,13 @@ import std.io;
 
 struct mdl_header{
     char MAGIC[4];
-    if(MAGIC == "VMG\x2E") {
-        std::print("Big time!");
-        #pragma endian big
-        }
     console ConsoleVersion;
-    u32 unk;
+    u8 textureOffsetPoint;
+    u8 textureCount;
+    u8 isNotTexture;
+    u8 unk;
     modelContent Contents;
-        u16 MatricesCount;
+    u16 MatricesCount;
     u16 Objects0Count;
     u16 Objects1Count;
     u16 Objects2Count;
@@ -256,19 +266,61 @@ struct mdl_header{
     u32 BoneHeaderOffset;
 };
 
-struct vxt_header{
+struct VXT_Header{
 char MAGIC[4];
 u8 type;
 u8 flag0;
 u8 flag1;
-u8 padding;
+padding[1];
 u32 TexRowCount;
+
+u32 HeaderLength;
+u32 HeaderBlockSize;
+};
+
+struct textureMap{
+    textureMapType Type; // 0x01=Diffuse, 0x02=Effects, 0x03=Animating, 0x04=?, 0x05=SpecBall 
+    u16 Size; // size of entry?
+    if (Size != -1 && Size > 4) {
+        if (Type == 1 && Size == 36) {
+            tVector2f TileUV;
+            float Values[6];
+        }
+        else {
+            float Values[(Size - 4) / 4];
+        }
+    }
+}
+;
+
+
+struct materialTable{
+    u8 Type;
+    u8 ukn1;
+    u8 ukn2;
+    materialTableCull CullMode; // 0x00=DrawnBothSides, 0x08=DrawnOneSide
+    u32 OpacitySrc;
+    u32 VXTOffset0; // offsets within the VXT block
+    u32 VXTOffset1;
+    u32 VXTOffset2;
+    u32 Map0Offset; //offsets to the texture table entries
+    u32 Map1Offset;
+    u32 Map2Offset;
+    tVector4f AmbientRGBA;
+    tVector4f DiffuseRGBA;
+    tVector4f SpecularRGBA;
+    if (Map0Offset !=0) {
+        textureMap texture_map0 @ Map0Offset;   
+    }
+    if (Map1Offset !=0) {
+        textureMap texture_map1 @ Map1Offset;   
+    }
+    if (Map2Offset !=0) {
+        textureMap texture_map2 @ Map2Offset;  
+    }
 };
 
 mdl_header SC2_MDL @0;
-
-
-
-
-
-
+matrixTable MatrixTBL[SC2_MDL.MatricesCount] @ SC2_MDL.MatrixTableOffset;
+VXT_Header vxt_header @ SC2_MDL.TextureTableOffset;
+materialTable vxt_materials[SC2_MDL.MaterialsCount] @ SC2_MDL.MaterialOffset;
