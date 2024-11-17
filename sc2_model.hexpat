@@ -293,6 +293,23 @@ struct textureMap{
 }
 ;
 
+ struct textureDataTypeXbox {
+    u32 TexturePaletteOffset; //TEXTURE PALETTE ROW OFFSET
+    fmtTXV_FLAG flags;
+    u32 Unk1; //00000000
+    if (vxt_header.Type == 2) {
+        u16 HeightVisible; //visible height
+        u16 WidthVisible; //visible width
+    }
+    u32 CLUTOffset; // color look up table, if DXT this is the image data addr
+    imageTypeXBOX ImageType; //0C = DXT1; 0F=DXT5; 0B=INDEX_COLOR(p8);
+    u16 Height; // dimension but in multiples of 8
+    u16 Width; // dimension but in multiples of 8
+    u32 MipMapCount; // mip count range [1 - 6]
+    padding[4] ; // pad to align
+}
+;
+
 
 struct materialTable{
     u8 Type;
@@ -320,7 +337,68 @@ struct materialTable{
     }
 };
 
+ struct boneInfo { // bone positions relative to its parent
+    tVector4f EndPositionXYZScale;
+    tVector4f StartPositionXYZScale;
+    tVector3f Rotation; // eulerangles, degrees (n*360)
+    u32 BoneNameOffset;
+    tVector3f ukn_bone1;
+    u8 ukn_bone2;
+    u8 BoneParentIdx;
+    u8 BoneIdx; // used for name look up?
+    u8 ukn_bone3;
+    //if (BoneNameOffset != 0) {
+    char Name[] @ BoneNameOffset;
+    //}
+}[[name(std::format("{}", Name))]];
+
+ struct layerObjectEntryXbox{
+    meshXboxContent ObjectType; // 0x00=Static, 0x04=Skinned
+    primativeXbox PrimitiveType; // 0x00=TriangleStrip, 0x01=TriangleList
+    u32 FaceCount; // Number of Index in Index Buffer
+    u32 MatrixOffset;
+    u32 MaterialOffset;
+    u32 FaceOffset; // Index Buffer Offset
+    u32 Buffer1Offset; // for skinned and static meshes this is the vertex buffer
+    u32 Buffer2Offset;
+    u32 Buffer3Offset;
+    u32 Buffer4Offset;
+    u32 CenterRadiusOffset; // "Aman" describes this section as "Center+Radius Offset"
+    
+    u16 skinned_mesh_data[FaceCount] @ FaceOffset;
+    };
+    
+struct weightDef{
+        tVector3f Positon; // positions relative to assigned bone
+        float BoneWeight;
+        tVector3f Normal;
+        u8 BoneIdx;
+        u8 Unk1[3];
+};
+
+struct weightTable {
+    u32 VertCount1; // number of vertices with 1 bone weight per vertex bone_id1
+    u32 VertCount2; // number of vertices with 2 bone weight per vertex bone_id2
+    u32 VertCount3; // number of vertices with 3 bone weight per vertex bone_id3
+    u32 VertCount4; // number of vertices with 4 bone weight per vertex bone_id4
+    u32 WeightBufferOffset; // weight buffer, also contains vertices and Normals
+    u32 VertBuffer1Offset; // Vertex Buffer
+    u32 VertBuffer2Offset; // Vertex Buffer2, redundant?
+
+};
+
+
 mdl_header SC2_MDL @0;
 matrixTable MatrixTBL[SC2_MDL.MatricesCount] @ SC2_MDL.MatrixTableOffset;
 VXT_Header vxt_header @ SC2_MDL.TextureTableOffset;
 materialTable vxt_materials[SC2_MDL.MaterialsCount] @ SC2_MDL.MaterialOffset;
+boneInfo bone_data[SC2_MDL.BonesCount] @ SC2_MDL.BoneOffset;
+
+weightTable weight_table @ SC2_MDL.WeightTableOffset;
+
+layerObjectEntryXbox object_0_xbox[SC2_MDL.Objects0Count] @ SC2_MDL.Object0Offset;
+
+weightDef relative_position_normal1[weight_table.VertCount1] @ weight_table.WeightBufferOffset;
+weightDef relative_position_normal2[weight_table.VertCount2 * 2]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1);
+weightDef relative_position_normal3[weight_table.VertCount3 * 3]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2);
+weightDef relative_position_normal4[weight_table.VertCount4 * 4]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2) + sizeof(relative_position_normal3);
