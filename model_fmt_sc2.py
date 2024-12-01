@@ -157,10 +157,74 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.unk2 = f.u8()
             if(self.BoneNameOffset):
                 self.Name = f.getString(self.BoneNameOffset)
+    class WeightTable(object):
+        class WeightDef(object):
+            def __init__(self):
+                self.Pos = [0.0]*3
+                self.bWgt = 1.0
+                self.Nor = [0.0]*3
+                self.bIdx = 0
+                self.stat = 0
+            def read(self,f):
+                self.Pos = f.f32_3()
+                self.bWgt = f.f32()
+                self.Nor = f.f32_3()
+                self.bIdx = f.u8()
+                self.stat = f.u8()
+                f.seek(2,1)
+
+
+        def __init__(self):
+            self.VertCounts = [0]*4
+            self.WeightBufferOffset = 0
+            self.VertBuffer1Offset = 0
+            self.VertBuffer2Offset = 0
+            self.WeightBuffer1 = []
+            self.WeightBuffer2 = []
+            self.WeightBuffer3 = []
+            self.WeightBuffer4 = []
+        def read(self,f):
+            for x in range(4):
+                self.VertCounts[x] = f.u32()
+            self.WeightBufferOffset = f.u32()
+            self.VertBuffer1Offset = f.u32()
+            self.VertBuffer2Offset = f.u32()
+            for idx,x in enumerate(self.VertCounts):
+                if(idx == 0):
+                    self.WeightBuffer1 = [self.WeightDef()] * x
+                elif(idx == 1):
+                    self.WeightBuffer2 = [self.WeightDef()] * (x * 2)
+                elif(idx == 2):
+                    self.WeightBuffer3 = [self.WeightDef()] * (x * 3)
+            f.seek(self.WeightBufferOffset)
+            for x in range(len(self.WeightBuffer1)):
+                a = self.WeightDef()
+                a.read(f)
+                self.WeightBuffer1[x] = a
+            for x in range(len(self.WeightBuffer2)):
+                a = self.WeightDef()
+                a.read(f)
+                self.WeightBuffer2[x] = a
+            for x in range(len(self.WeightBuffer3)):
+                a = self.WeightDef()
+                a.read(f)
+                self.WeightBuffer3[x] = a
+            high = 4
+            for x in range(self.VertCounts[3]):
+                arr = []
+                for y in range(high):
+                    a = self.WeightDef()
+                    a.read(f)
+                    arr.append(a)
+                    if(a.stat == 1):
+                        high +=1
+                self.WeightBuffer4.append(arr)
+
     def __init__(self):
         self.f = None
         self.header = self.Header()
         self.unkMtx = self.MatrixUnk()
+        self.wgtTbl = self.WeightTable()
         self.matrix_table = []
         self.boneInfo = []
     def read(self,f):
@@ -182,5 +246,5 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             a = self.BoneInfo()
             a.read(self.f)
             self.boneInfo.append(a)
-        
-        
+        self.f.seek(self.header.WeightTableOffset)
+        self.wgtTbl.read(self.f)
