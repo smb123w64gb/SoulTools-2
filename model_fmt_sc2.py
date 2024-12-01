@@ -5,49 +5,49 @@ class FRead(object): #Generic file reader
         if(big_endian):
             self.endian ='>'
         self.file = f
-        def swapEndian():
-            if(self.endian == '>'):
-                self.endian='<'
-            else:
-                self.endian='>'
-        def u32(self):
-            return struct.unpack(self.endian+'I', self.file.read(4))[0]
-        def u16(self):
-            return struct.unpack(self.endian+'H', self.file.read(2))[0]
-        def u8(self):
-            return struct.unpack(self.endian+'B', self.file.read(1))[0]
-        def s32(self):
-            return struct.unpack(self.endian+'i', self.file.read(4))[0]
-        def s16(self):
-            return struct.unpack(self.endian+'h', self.file.read(2))[0]
-        def s8(self):
-            return struct.unpack(self.endian+'b', self.file.read(1))[0]
-        def f16(self):
-            return struct.unpack(self.endian+'e', self.file.read(2))[0]
-        def f32(self):
-            return struct.unpack(self.endian+'f', self.file.read(4))[0]
-        def f32_4(self):
-            return struct.unpack(self.endian+'f'+self.endian+'f'+self.endian+'f'+self.endian+'f', self.file.read(16))[0:4]
-        def f32_3(self):
-            return struct.unpack(self.endian+'f'+self.endian+'f'+self.endian+'f', self.file.read(12))[0:3]
-        def seek(self,offset,whence=0):
-            self.file.seek(offset,whence)
-        def tell(self):
-            self.file.tell()
-        def read(self,x):
-            self.file.read(x)
-        def getString(self,offset = 0):
-            if(offset):
-                ret = self.tell()
-                self.seek(offset)
-            result = ""
-            tmpChar = file.read(1)
-            while ord(tmpChar) != 0:
-                result += tmpChar.decode("utf-8")
-                tmpChar =file.read(1)
-            if(offset):
-                self.seek(ret)
-            return result
+    def swapEndian():
+        if(self.endian == '>'):
+            self.endian='<'
+        else:
+            self.endian='>'
+    def u32(self):
+        return struct.unpack(self.endian+'I', self.file.read(4))[0]
+    def u16(self):
+        return struct.unpack(self.endian+'H', self.file.read(2))[0]
+    def u8(self):
+        return struct.unpack(self.endian+'B', self.file.read(1))[0]
+    def s32(self):
+        return struct.unpack(self.endian+'i', self.file.read(4))[0]
+    def s16(self):
+        return struct.unpack(self.endian+'h', self.file.read(2))[0]
+    def s8(self):
+        return struct.unpack(self.endian+'b', self.file.read(1))[0]
+    def f16(self):
+        return struct.unpack(self.endian+'e', self.file.read(2))[0]
+    def f32(self):
+        return struct.unpack(self.endian+'f', self.file.read(4))[0]
+    def f32_4(self):
+        return struct.unpack(self.endian+'ffff', self.file.read(16))[0:4]
+    def f32_3(self):
+        return struct.unpack(self.endian+'fff', self.file.read(12))[0:3]
+    def seek(self,offset,whence=0):
+        self.file.seek(offset,whence)
+    def tell(self):
+        self.file.tell()
+    def read(self,x):
+        return self.file.read(x)
+    def getString(self,offset = 0):
+        if(offset):
+            ret = self.file.tell()
+            self.seek(offset)
+        result = ""
+        tmpChar = self.file.read(1)
+        while ord(tmpChar) != 0:
+            result += tmpChar.decode("utf-8")
+            tmpChar = self.file.read(1)
+        if(offset):
+            self.seek(ret)
+        return result
 class MTX(object):
     def __init__(self):
         self.matrix = [[0.0,0.0,0.0,0.0]*4]
@@ -155,7 +155,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoneParentIdx = f.u8()
             self.BoneIdx = f.u8()
             self.unk2 = f.u8()
-            self.Name = f.getString(self.BoneNameOffset)
+            if(self.BoneNameOffset):
+                self.Name = f.getString(self.BoneNameOffset)
     def __init__(self):
         self.f = None
         self.header = self.Header()
@@ -165,21 +166,21 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
     def read(self,f):
         self.f = FRead(f)
         self.header.read(self.f)
-        f.seek(self.header.ukn_MatrixTableOffset)
-        self.unkMtx.read(f)
-        f.seek(self.header.MatricesInfo[1])
+        self.f.seek(self.header.ukn_MatrixTableOffset)
+        self.unkMtx.read(self.f)
+        self.f.seek(self.header.MatricesInfo[1])
         skipAmount = 320
         if(self.header.Endian):
             skipAmount = 256
         for x in range(self.header.MatricesInfo[0]):
             a = self.MatrixTable()
-            a.read(f)
+            a.read(self.f)
             self.matrix_table.append(a)
-            f.seek(skipAmount,1)
-        f.seek(self.header.BoneInfo[1])
+            self.f.seek(skipAmount,1)
+        self.f.seek(self.header.BoneInfo[1])
         for x in range(self.header.BoneInfo[0]):
             a = self.BoneInfo()
-            a.read()
+            a.read(self.f)
             self.boneInfo.append(a)
         
         
