@@ -171,9 +171,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.Nor = f.f32_3()
                 self.bIdx = f.u8()
                 self.stat = f.u8()
+                if(self.stat):
+                    print(self.stat)
                 f.seek(2,1)
-
-
         def __init__(self):
             self.VertCounts = [0]*4
             self.WeightBufferOffset = 0
@@ -219,7 +219,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     if(a.stat == 1):
                         high +=1
                 self.WeightBuffer4.append(arr)
-
     def __init__(self):
         self.f = None
         self.header = self.Header()
