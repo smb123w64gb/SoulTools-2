@@ -273,8 +273,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.MipMapCount = 1 # mip count range [1 - 6]
                 self.Pad2 = 0 # pad to align
                 self.DiffuseBytes = bytearray()
-                self.MipMapBytes = []
-                self.Palette = 0
+                self.MipMapBytes = bytearray()
+                self.Palette = bytearray()
                 self.TextureSize = 0
         def __init__(self):
             self.MAGIC = "VXT"
@@ -357,6 +357,32 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     if(a.stat == 1):
                         high +=1
                 self.WeightBuffer4.append(arr)
+    class LayerObjectEntryXbox(object):
+        def __init__(self):
+            self.ObjectType = 0
+            self.PrimitiveType = 0
+            self.FaceCount = 0
+            self.MatrixOffset = 0
+            self.MaterialOffset = 0
+            self.FaceOffset = 0
+            self.Buffer1Offset = 0
+            self.Buffer2Offset = 0
+            self.Buffer3Offset = 0
+            self.Buffer4Offset = 0
+            self.CenterRadiusOffset = 0
+            self.Mesh = []
+        def read_info(self,f):
+                self.ObjectType = f.u16()
+                self.PrimitiveType = f.u16()
+                self.FaceCount = f.u32()
+                self.MatrixOffset = f.u32()
+                self.MaterialOffset = f.u32()
+                self.FaceOffset = f.u32()
+                self.Buffer1Offset = f.u32()
+                self.Buffer2Offset = f.u32()
+                self.Buffer3Offset = f.u32()
+                self.Buffer4Offset = f.u32()
+                self.CenterRadiusOffset = f.u32()
     def __init__(self):
         self.f = None
         self.header = self.Header()
