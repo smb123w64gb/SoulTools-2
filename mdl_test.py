@@ -10,6 +10,19 @@ mdl.read(mdl_file)
 mdl_file.close()
 
 print(str(mdl.header))
+totalRigged = 0
+
+for x in mdl.Object_2:
+    if(x.ObjectType == 4):
+        x.
+
+
+
+
+total = 0
+for x in mdl.wgtTbl.VertCounts:
+    total += x
+print("Total Verts Weghted %i" % total)
 
 '''
 obj = open(sys.argv[1] + ".obj", "w")

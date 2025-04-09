@@ -117,6 +117,8 @@ class FRead(object): #Generic file reader
         return struct.unpack(self.endian+'H', self.file.read(2))[0]
     def u8(self):
         return struct.unpack(self.endian+'B', self.file.read(1))[0]
+    def u8_4(self):
+        return struct.unpack(self.endian+'BBBB', self.file.read(4))[0:4]
     def s32(self):
         return struct.unpack(self.endian+'i', self.file.read(4))[0]
     def s16(self):
@@ -131,6 +133,8 @@ class FRead(object): #Generic file reader
         return struct.unpack(self.endian+'ffff', self.file.read(16))[0:4]
     def f32_3(self):
         return struct.unpack(self.endian+'fff', self.file.read(12))[0:3]
+    def f32_2(self):
+        return struct.unpack(self.endian+'fff', self.file.read(8))[0:2]
     def seek(self,offset,whence=0):
         self.file.seek(offset,whence)
     def tell(self):
@@ -220,9 +224,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             rt += str("BoneInfo count %i @ %s\n"%(self.BoneInfo[0],hex(self.BoneInfo[1])))
             rt += str("MaterialsInfo count %i @ %s\n"%(self.MaterialsInfo[0],hex(self.MaterialsInfo[1])))
             return rt
-
-
-
     class MatrixUnk(object):
         def __init__(self):
             self.unk = 0
@@ -373,6 +374,27 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     if(a.stat == 1):
                         high +=1
                 self.WeightBuffer4.append(arr)
+    class BufferColorUV(object):
+        def __init__(self):
+            self.RGBA = [255]*4
+            self.UV = [0.0]*2
+        def read(self,f):
+            self.RGBA = f.u8_4()
+            self.UV = f.f32_2()
+    class BufferScaleVertex(object):
+        def __init__(self):
+            self.Position = [0.0] * 3
+            self.PositionScale = 1.0
+            self.Normal = [0.0] * 3
+            self.NormalScale = 1.0
+        def read(self,f):
+            self.Position = f.f32_4()
+            self.PositionScale = f.f32()
+            self.Normal = f.f32_4()
+            self.NormalScale = f.f32()
+    class BufferStaticVertex(object):
+        def __init__(self):
+            pass
     class LayerObjectEntryXbox(object):
         def __init__(self):
             self.ObjectType = 0
