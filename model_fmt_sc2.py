@@ -374,28 +374,39 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     if(a.stat == 1):
                         high +=1
                 self.WeightBuffer4.append(arr)
-    class BufferColorUV(object):
-        def __init__(self):
-            self.RGBA = [255]*4
-            self.UV = [0.0]*2
-        def read(self,f):
-            self.RGBA = f.u8_4()
-            self.UV = f.f32_2()
-    class BufferScaleVertex(object):
-        def __init__(self):
-            self.Position = [0.0] * 3
-            self.PositionScale = 1.0
-            self.Normal = [0.0] * 3
-            self.NormalScale = 1.0
-        def read(self,f):
-            self.Position = f.f32_4()
-            self.PositionScale = f.f32()
-            self.Normal = f.f32_4()
-            self.NormalScale = f.f32()
-    class BufferStaticVertex(object):
-        def __init__(self):
-            pass
+    
     class LayerObjectEntryXbox(object):
+        class BufferColorUV(object):
+            def __init__(self):
+                self.RGBA = [255]*4
+                self.UV = [0.0]*2
+            def read(self,f):
+                self.RGBA = f.u8_4()
+                self.UV = f.f32_2()
+        class BufferScaleVertex(object):
+            def __init__(self):
+                self.Position = [0.0] * 3
+                self.PositionScale = 1.0
+                self.Normal = [0.0] * 3
+                self.NormalScale = 1.0
+            def read(self,f):
+                self.Position = f.f32_3()
+                self.PositionScale = f.f32()
+                self.Normal = f.f32_3()
+                self.NormalScale = f.f32()
+        class BufferStaticVertex(object):
+            def __init__(self):
+                self.Position = [0.0] * 3
+                self.Normal = [0.0] * 3
+                self.RGBA = [255]*4
+                self.UV = [0.0]*2
+                self.pad = 0
+            def read(self,f):
+                self.Position = f.f32_3()
+                self.Normal = f.f32_3()
+                self.RGBA = f.u8_4()
+                self.UV = f.f32_2()
+                self.pad = f.u32()
         def __init__(self):
             self.ObjectType = 0
             self.PrimitiveType = 0
@@ -409,7 +420,17 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Buffer4Offset = 0
             self.CenterRadiusOffset = 0
             self.Mesh = []
-        def read_info(self,f):
+            self.RiggedVerts = [] * 3 #UV + Scalable Poss + UNK?
+            self.StaticVerts = [] 
+        def findmaxVerts(self):
+            maxi = 0
+            for x in self.Mesh:
+                if(x == 0xFFFF):
+                    pass
+                elif(maxi < x):
+                    maxi = x
+            return maxi
+        def read(self,f):
                 self.ObjectType = f.u16()
                 self.PrimitiveType = f.u16()
                 self.FaceCount = f.u32()
@@ -421,12 +442,35 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.Buffer3Offset = f.u32()
                 self.Buffer4Offset = f.u32()
                 self.CenterRadiusOffset = f.u32()
-
                 fret = f.tell()
                 f.seek(self.FaceOffset)
                 for x in range(self.FaceCount):
                     self.Mesh.append(f.u16)
+                vertCount = self.findmaxVerts()
+                if(self.ObjectType == 4):
+                    f.seek(self.Buffer1Offset)
+                    for x in range(vertCount):
+                        uv = self.BufferColorUV()
+                        uv.read(f)
+                        self.RiggedVerts[0].append(uv)
+                    f.seek(self.Buffer2Offset)
+                    for x in range(vertCount):
+                        vert = self.BufferScaleVertex()
+                        vert.read(f)
+                        self.RiggedVerts[1].append(vert)
+                    f.seek(self.Buffer3Offset)
+                    for x in range(vertCount):
+                        vert = self.BufferScaleVertex()
+                        vert.read(f)
+                        self.RiggedVerts[2].append(vert)
+                else:
+                    f.seek(self.Buffer4Offset)
+                    for x in range(vertCount):
+                        vert = self.BufferStaticVertex()
+                        vert.read(f)
+                        self.StaticVerts.append(vert)
                 f.seek(fret)
+                    
         def __str__(self):
             rt = ""
 
@@ -480,15 +524,15 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.f.seek(self.header.Layer0Info[1])
         for x in range(self.header.Layer0Info[0]):
             Layer = self.LayerObjectEntryXbox()
-            Layer.read_info(self.f)
+            Layer.read(self.f)
             self.Object_0.append(Layer)
         self.f.seek(self.header.Layer1Info[1])
         for x in range(self.header.Layer1Info[0]):
             Layer = self.LayerObjectEntryXbox()
-            Layer.read_info(self.f)
+            Layer.read(self.f)
             self.Object_1.append(Layer)
         self.f.seek(self.header.Layer2Info[1])
         for x in range(self.header.Layer2Info[0]):
             Layer = self.LayerObjectEntryXbox()
-            Layer.read_info(self.f)
+            Layer.read(self.f)
             self.Object_2.append(Layer)
