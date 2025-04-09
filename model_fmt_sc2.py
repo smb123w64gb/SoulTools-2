@@ -134,7 +134,7 @@ class FRead(object): #Generic file reader
     def seek(self,offset,whence=0):
         self.file.seek(offset,whence)
     def tell(self):
-        self.file.tell()
+        return self.file.tell()
     def read(self,x):
         return self.file.read(x)
     def getString(self,offset = 0):
@@ -208,6 +208,21 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoneInfo[1] = f.u32()
             self.BoneNameOffset = f.u32()
             self.BoneHeaderOffset = f.u32()
+        def __str__(self):
+            rt = ""
+            rt += str("Magic: %s\n" % self.MAGIC)
+            rt += str("Ver: %i\n" % self.Version)
+            rt += str("ModelContent: %i\n"%self.ModelContent)
+            rt += str("Matrix count %i @ %s\n"%(self.MatricesInfo[0],hex(self.MatricesInfo[1])))
+            rt += str("Layer0Info count %i @ %s\n"%(self.Layer0Info[0],hex(self.Layer0Info[1])))
+            rt += str("Layer1Info count %i @ %s\n"%(self.Layer1Info[0],hex(self.Layer1Info[1])))
+            rt += str("Layer2Info count %i @ %s\n"%(self.Layer2Info[0],hex(self.Layer2Info[1])))
+            rt += str("BoneInfo count %i @ %s\n"%(self.BoneInfo[0],hex(self.BoneInfo[1])))
+            rt += str("MaterialsInfo count %i @ %s\n"%(self.MaterialsInfo[0],hex(self.MaterialsInfo[1])))
+            return rt
+
+
+
     class MatrixUnk(object):
         def __init__(self):
             self.unk = 0
@@ -327,6 +342,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.WeightBufferOffset = f.u32()
             self.VertBuffer1Offset = f.u32()
             self.VertBuffer2Offset = f.u32()
+            print("Vert Buff1:%s\nVert Buff2:%s" %(hex(self.VertBuffer1Offset),hex(self.VertBuffer2Offset)))
             for idx,x in enumerate(self.VertCounts):
                 if(idx == 0):
                     self.WeightBuffer1 = [self.WeightDef()] * x
@@ -383,6 +399,31 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.Buffer3Offset = f.u32()
                 self.Buffer4Offset = f.u32()
                 self.CenterRadiusOffset = f.u32()
+
+                fret = f.tell()
+                f.seek(self.FaceOffset)
+                for x in range(self.FaceCount):
+                    self.Mesh.append(f.u16)
+                f.seek(fret)
+        def __str__(self):
+            rt = ""
+
+            if(self.ObjectType == 0):
+                rt += "STATIC\n"
+            elif(self.ObjectType == 4):
+                rt += "SKINNED\n"
+            else:
+                rt += str("UNK %i\n" % self.ObjectType)
+
+            if(self.PrimitiveType == 0):
+                rt += "TRIANGLESTRIP\n"
+            elif(self.PrimitiveType == 1):
+                rt += "TRIANGLELIST\n"
+            else:
+                rt += str("UNK %i\n" % self.PrimitiveType)
+            rt += str("Face Count: %i @ %s\n" % (self.FaceCount,hex(self.FaceOffset)))
+            return rt
+            
     def __init__(self):
         self.f = None
         self.header = self.Header()
@@ -390,6 +431,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.wgtTbl = self.WeightTable()
         self.matrix_table = []
         self.boneInfo = []
+        self.Object_0 = []
+        self.Object_1 = []
+        self.Object_2 = []
     def read(self,f):
         self.f = FRead(f)
         self.header.read(self.f)
@@ -411,3 +455,18 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.boneInfo.append(a)
         self.f.seek(self.header.WeightTableOffset)
         self.wgtTbl.read(self.f)
+        self.f.seek(self.header.Layer0Info[1])
+        for x in range(self.header.Layer0Info[0]):
+            Layer = self.LayerObjectEntryXbox()
+            Layer.read_info(self.f)
+            self.Object_0.append(Layer)
+        self.f.seek(self.header.Layer1Info[1])
+        for x in range(self.header.Layer1Info[0]):
+            Layer = self.LayerObjectEntryXbox()
+            Layer.read_info(self.f)
+            self.Object_1.append(Layer)
+        self.f.seek(self.header.Layer2Info[1])
+        for x in range(self.header.Layer2Info[0]):
+            Layer = self.LayerObjectEntryXbox()
+            Layer.read_info(self.f)
+            self.Object_2.append(Layer)
