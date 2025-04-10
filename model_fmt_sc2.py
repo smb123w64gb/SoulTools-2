@@ -134,7 +134,7 @@ class FRead(object): #Generic file reader
     def f32_3(self):
         return struct.unpack(self.endian+'fff', self.file.read(12))[0:3]
     def f32_2(self):
-        return struct.unpack(self.endian+'fff', self.file.read(8))[0:2]
+        return struct.unpack(self.endian+'ff', self.file.read(8))[0:2]
     def seek(self,offset,whence=0):
         self.file.seek(offset,whence)
     def tell(self):
@@ -325,8 +325,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.Nor = f.f32_3()
                 self.bIdx = f.u8()
                 self.stat = f.u8()
-                if(self.stat):
-                    print(self.stat)
                 f.seek(2,1)
         def __init__(self):
             self.VertCounts = [0]*4
@@ -343,7 +341,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.WeightBufferOffset = f.u32()
             self.VertBuffer1Offset = f.u32()
             self.VertBuffer2Offset = f.u32()
-            print("Vert Buff1:%s\nVert Buff2:%s" %(hex(self.VertBuffer1Offset),hex(self.VertBuffer2Offset)))
             for idx,x in enumerate(self.VertCounts):
                 if(idx == 0):
                     self.WeightBuffer1 = [self.WeightDef()] * x
@@ -420,11 +417,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Buffer4Offset = 0
             self.CenterRadiusOffset = 0
             self.Mesh = []
-            self.RiggedVerts = [] * 3 #UV + Scalable Poss + UNK?
+            self.RiggedVerts = [[]] * 3 #UV + Scalable Poss + UNK?
             self.StaticVerts = [] 
         def findmaxVerts(self):
             maxi = 0
             for x in self.Mesh:
+                
                 if(x == 0xFFFF):
                     pass
                 elif(maxi < x):
@@ -445,24 +443,31 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 fret = f.tell()
                 f.seek(self.FaceOffset)
                 for x in range(self.FaceCount):
-                    self.Mesh.append(f.u16)
+                    self.Mesh.append(f.u16())
                 vertCount = self.findmaxVerts()
                 if(self.ObjectType == 4):
                     f.seek(self.Buffer1Offset)
+                    uvs = []
                     for x in range(vertCount):
                         uv = self.BufferColorUV()
                         uv.read(f)
-                        self.RiggedVerts[0].append(uv)
+                        uvs.append(uv)
+                    self.RiggedVerts[0] = uvs
                     f.seek(self.Buffer2Offset)
+                    verts = []
                     for x in range(vertCount):
                         vert = self.BufferScaleVertex()
                         vert.read(f)
-                        self.RiggedVerts[1].append(vert)
+                        verts.append(vert)
+                    self.RiggedVerts[1] = verts
                     f.seek(self.Buffer3Offset)
+                    verts = []
                     for x in range(vertCount):
                         vert = self.BufferScaleVertex()
                         vert.read(f)
-                        self.RiggedVerts[2].append(vert)
+                        verts.append(vert)
+                    self.RiggedVerts[2] = verts
+                    
                 else:
                     f.seek(self.Buffer4Offset)
                     for x in range(vertCount):
