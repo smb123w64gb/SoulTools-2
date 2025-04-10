@@ -1,13 +1,27 @@
 import model_fmt_sc2
 import sys
+import struct
 
 mdl_file = open(sys.argv[1], "rb")
 
 mdl = model_fmt_sc2.VM()
 
 mdl.read(mdl_file)
+mdl_file.seek(0)
+
+mdlOut = open(sys.argv[1] + "mod.vmx", "wb")
+mdlOut.write(mdl_file.read()) #copy the file
 
 mdl_file.close()
+
+mdlOut.seek(mdl.Object_0[6].Buffer3Offset)
+for x in range(len(mdl.Object_0[6].RiggedVerts[2])):
+    mdlOut.write(struct.pack('ffffffff',0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0))
+mdlOut.seek(mdl.Object_0[6].Buffer2Offset)
+for x in range(len(mdl.Object_0[6].RiggedVerts[2])):
+    mdlOut.write(struct.pack('ffffffff',0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0))
+
+'''
 
 obj = open(sys.argv[1] + ".obj", "w")
 
@@ -45,7 +59,7 @@ for x in mdl.Object_0:
             obj.write(str("o Obj_%02i\n" % currentObj))
             currentObj+=1
             
-            for y in x.RiggedVerts[1]:
+            for y in x.RiggedVerts[2]:
                 obj.write(str("v %f %f %f\n"%(y.Position[0],y.Position[1],y.Position[2])))
     polygons = triangle_strip_to_list(x.Mesh)
     for pp in polygons:
@@ -54,42 +68,4 @@ for x in mdl.Object_0:
             obj.write(str(" %i" % (p+currentVertH)))
         obj.write("\n")
     currentVertH += len(x.StaticVerts) + len(x.RiggedVerts[1])
-
-
-
-
-
-'''total = 0
-for x in mdl.wgtTbl.VertCounts:
-    total += x
-print("Total Verts Weghted %i" % total)
 '''
-
-
-'''
-obj = open(sys.argv[1] + ".obj", "w")
-
-weght = 0.0
-idxs = []
-
-obj.write("o test\n")
-
-for x in mdl.wgtTbl.WeightBuffer1:
-    obj.write(str("v %f %f %f\n" % (x.Pos[0],x.Pos[1],x.Pos[2])))
-for x in mdl.wgtTbl.WeightBuffer2:
-    obj.write(str("v %f %f %f\n" % (x.Pos[0],x.Pos[1],x.Pos[2])))
-for x in mdl.wgtTbl.WeightBuffer3:
-    obj.write(str("v %f %f %f\n" % (x.Pos[0],x.Pos[1],x.Pos[2])))
-for y in mdl.wgtTbl.WeightBuffer4:
-    for x in y:
-        obj.write(str("v %f %f %f\n" % (x.Pos[0],x.Pos[1],x.Pos[2])))
-'''
-'''for x in mdl.wgtTbl.WeightBuffer4:
-    idxs.append(str("%i : %.2f"%(x.bIdx,x.bWgt)))
-    weght += x.bWgt
-    if(weght>.999999):
-        print("%s Count %i"%(str(idxs), len(idxs)))
-        print(weght)
-        idxs = []
-        weght = 0.0'''
-        
