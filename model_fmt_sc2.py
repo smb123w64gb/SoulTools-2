@@ -326,6 +326,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.bIdx = f.u8()
                 self.stat = f.u8()
                 f.seek(2,1)
+            def as_bytes(self):
+                return struct.pack('fffffffBBH',self.Pos[0],self.Pos[1],self.Pos[2],self.bWgt,self.Nor[0],self.Nor[1],self.Nor[2],self.bIdx,self.stat,0)
         def __init__(self):
             self.VertCounts = [0]*4
             self.WeightBufferOffset = 0

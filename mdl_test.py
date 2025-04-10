@@ -14,12 +14,21 @@ mdlOut.write(mdl_file.read()) #copy the file
 
 mdl_file.close()
 
-mdlOut.seek(mdl.Object_0[6].Buffer3Offset)
-for x in range(len(mdl.Object_0[6].RiggedVerts[2])):
-    mdlOut.write(struct.pack('ffffffff',0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0))
-mdlOut.seek(mdl.Object_0[6].Buffer2Offset)
-for x in range(len(mdl.Object_0[6].RiggedVerts[2])):
-    mdlOut.write(struct.pack('ffffffff',0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0))
+mdlOut.seek(mdl.wgtTbl.WeightBufferOffset)
+for x in mdl.wgtTbl.WeightBuffer1:
+    x.Pos = [0.0]*3
+    mdlOut.write(x.as_bytes())
+for x in mdl.wgtTbl.WeightBuffer2:
+    x.Pos = [0.0]*3
+    mdlOut.write(x.as_bytes())
+for x in mdl.wgtTbl.WeightBuffer3:
+    x.Pos = [0.0]*3
+    mdlOut.write(x.as_bytes())
+for y in mdl.wgtTbl.WeightBuffer4:
+    for x in y:
+        x.Pos = [0.0]*3
+        mdlOut.write(x.as_bytes())
+
 
 '''
 
@@ -59,7 +68,7 @@ for x in mdl.Object_0:
             obj.write(str("o Obj_%02i\n" % currentObj))
             currentObj+=1
             
-            for y in x.RiggedVerts[2]:
+            for y in x.RiggedVerts[1]:
                 obj.write(str("v %f %f %f\n"%(y.Position[0],y.Position[1],y.Position[2])))
     polygons = triangle_strip_to_list(x.Mesh)
     for pp in polygons:
