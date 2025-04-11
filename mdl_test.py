@@ -14,19 +14,21 @@ mdlOut.write(mdl_file.read()) #copy the file
 
 mdl_file.close()
 
+boneMax = len(mdl.boneInfo) - 1
+
 mdlOut.seek(mdl.wgtTbl.WeightBufferOffset)
 for x in mdl.wgtTbl.WeightBuffer1:
-    x.Pos = [0.0]*3
+    x.bIdx = 0
     mdlOut.write(x.as_bytes())
 for x in mdl.wgtTbl.WeightBuffer2:
-    x.Pos = [0.0]*3
+    x.bIdx = 0
     mdlOut.write(x.as_bytes())
 for x in mdl.wgtTbl.WeightBuffer3:
-    x.Pos = [0.0]*3
+    x.bIdx = 0
     mdlOut.write(x.as_bytes())
 for y in mdl.wgtTbl.WeightBuffer4:
     for x in y:
-        x.Pos = [0.0]*3
+        x.bIdx = 0
         mdlOut.write(x.as_bytes())
 
 
