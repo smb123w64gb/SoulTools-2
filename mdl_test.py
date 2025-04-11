@@ -16,7 +16,12 @@ mdl_file.close()
 
 boneMax = len(mdl.boneInfo) - 1
 
+mdlOut.seek(0x6)
+mdlOut.write(struct.pack('B',1))
+
+'''
 mdlOut.seek(mdl.wgtTbl.WeightBufferOffset)
+
 for x in mdl.wgtTbl.WeightBuffer1:
     x.bIdx = 0
     mdlOut.write(x.as_bytes())
@@ -32,7 +37,7 @@ for y in mdl.wgtTbl.WeightBuffer4:
         mdlOut.write(x.as_bytes())
 
 
-'''
+''''''
 
 obj = open(sys.argv[1] + ".obj", "w")
 

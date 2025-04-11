@@ -288,7 +288,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.Width = 0 # dimension but in multiples of 8
                 self.MipMapCount = 1 # mip count range [1 - 6]
                 self.Pad2 = 0 # pad to align
-                self.DiffuseBytes = bytearray()
+                self.DiffuseBytes = bytearray.fromhex("1BF8000005055050")
                 self.MipMapBytes = bytearray()
                 self.Palette = bytearray()
                 self.TextureSize = 0
