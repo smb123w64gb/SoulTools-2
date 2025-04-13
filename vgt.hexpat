@@ -50,11 +50,58 @@ bitfield rgb565{
     B : 5;
 } [[static, color(std::format("{:02X}{:02X}{:02X}", R, G, B))]];
 
+enum  WrapMode : u32
+{
+  Clamp = 0,
+  Repeat = 1,
+  Mirror = 2,
+  // Hardware testing indicates that WrapMode set to 3 behaves the same as clamp, though this is an
+  // invalid value
+};
+enum  FilterMode : u32
+{
+  Near = 0,
+  Linear = 1,
+};
+enum  MipMode : u32
+{
+  None = 0,
+  Point = 1,
+  Linear = 2,
+};
+enum  LODType : u32
+{
+  Edge = 0,
+  Diagonal = 1,
+};
+enum MaxAniso : u32
+{
+  One = 0,
+  Two = 1,
+  Four = 2,
+};
+
+bitfield TexMode0{
+padd : 12;
+bool lod_clamp : 1;
+MaxAniso max_aniso : 2;
+signed lod_bias : 8;
+LODType diag_lod : 1;
+FilterMode min_filter : 1;
+MipMode mipmap_filter : 2;
+FilterMode mag_filter : 1;
+WrapMode wrap_t : 2;
+WrapMode wrap_s : 2;
+};
+
+
 bitfield tDimension{
-    X : 10;
-    Y : 10;
-    imagetype : 12;
+imageTypeGCN imagetype : 12;
+Y : 10;
+X : 10;
 }[[static,name(std::format("imagetype{}, X: {}, Y:{}",imagetype, X, Y))]];
+
+
 
 struct tVectorColorb {
   u8 R   [[color("FF0000")]];
@@ -63,18 +110,28 @@ struct tVectorColorb {
   u8 A;
 } [[static, color(std::format("{:02X}{:02X}{:02X}", R, G, B))]];
 
-struct textureDataSlice{
+bitfield TexImage1{
+padd: 10;
+tmem_even : 15;
+cache_width : 3;
+cache_height : 3;
+cache_manually_managed : 1;
+};
 
-    u32 unk1;
-    u16 unk2;
-    u16 unk3;
+
+struct textureDataSlice{
+    TexMode0 TexModeInfo;
+    u16 unk0;
+    u8 maxlod;
+    u8 minlod;
     tDimension Dimensions;
     u32 CLUTOffset;
     u16 unk4;
     u16 unk5;
     imageTypeGCN ImageType;
     u32 unk6;
-    u32 unk7;
+    u16 imageSizeGC;
+    u16 unk8;
 };
 
 struct textureData{
@@ -99,7 +156,7 @@ struct VGT{
     u32 HeaderLen;
     u32 HeaderBlockSize;
     textureData txtData[TexCount];
-    palletData pltData[TexCount];
+    //palletData pltData[TexCount];
 };
 
 VGT texture @ 0;
