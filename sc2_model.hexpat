@@ -392,7 +392,33 @@ struct materialTable{
     //}
 }[[name(std::format("{}", Name))]];
 
+struct buffer1{
+    tVectorColorb ColorRGBA;
+    tVector2f TextureUV;
+}[[static]];
+struct buffer2{
+    tVector4f PositonXYZScale;
+    tVector4f NormalXYZScale;
+}[[static]];
+struct buffer3{
+    tVector4f PositonXYZScale;
+    tVector4f NormalXYZScale;
+}[[static]];
+struct buffer4{
+    tVector3f Positon;
+    tVector3f Normal;
+    buffer1 vert_def;
+    u32 Pad;
+}[[static]];
+u16 vertCount = 0;
+struct face{
+    u16 value;
+    if(vertCount < value){
+    vertCount = value;
+    }
+};
  struct layerObjectEntryXbox{
+    vertCount = 0;
     meshXboxContent ObjectType; // 0x00=Static, 0x04=Skinned
     primativeXbox PrimitiveType; // 0x00=TriangleStrip, 0x01=TriangleList
     u32 FaceCount; // Number of Index in Index Buffer
@@ -405,7 +431,18 @@ struct materialTable{
     u32 Buffer4Offset;
     u32 CenterRadiusOffset; // "Aman" describes this section as "Center+Radius Offset"
     
-    u16 skinned_mesh_data[FaceCount] @ FaceOffset;
+    face skinned_mesh_data[FaceCount] @ FaceOffset;
+    vertCount+=1;
+    
+    if(ObjectType == meshXboxContent::STATICXBOX){
+    buffer4 staticVerts[vertCount] @ Buffer4Offset;
+    tVector4f CenterRadius @ Buffer4Offset + sizeof(staticVerts);
+    }else if(ObjectType == meshXboxContent::SKINNEDXBOX){
+    buffer1 color[vertCount] @ Buffer1Offset;
+    buffer2 position[vertCount] @ Buffer2Offset;
+    buffer3 normal[vertCount] @ Buffer3Offset;
+    }
+    
     };
     
 struct weightDef{
@@ -413,7 +450,8 @@ struct weightDef{
         float BoneWeight;
         tVector3f Normal;
         u8 BoneIdx;
-        u8 Unk1[3];
+        u8 intcre;
+        u8 Unk1[2];
 };
 
 struct weightTable {
@@ -444,3 +482,5 @@ weightDef relative_position_normal1[weight_table.VertCount1] @ weight_table.Weig
 weightDef relative_position_normal2[weight_table.VertCount2 * 2]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1);
 weightDef relative_position_normal3[weight_table.VertCount3 * 3]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2);
 weightDef relative_position_normal4[weight_table.VertCount4 * 4]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2) + sizeof(relative_position_normal3);
+
+u8 unkarray[40] @ SC2_MDL.BoneHeaderOffset; 
