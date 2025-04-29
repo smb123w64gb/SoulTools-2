@@ -1,3 +1,6 @@
+import type.float16;
+using float16 = le u16 [[format("type::impl::format_float16")]];
+
 enum console : u8 {
     UNK0     = 0,
     UNK1     = 1,
@@ -580,12 +583,10 @@ struct layerObjectEntryGC{
     };
     
 struct weightDef{
-        tVector3f Positon; // positions relative to assigned bone
-        float BoneWeight;
-        tVector3f Normal;
-        u8 BoneIdx;
-        u8 intcre;
-        u8 Unk1[2];
+        s16 Positon[3]; // positions relative to assigned bone & 
+        s16 BoneWeight; // # / 8192
+        s16 Normal[3]; // # / 16384
+        s16 BoneIdx;
 };
 
 struct weightTable {
@@ -596,6 +597,8 @@ struct weightTable {
     u32 WeightBufferOffset; // weight buffer, also contains vertices and Normals
     u32 VertBuffer1Offset; // Vertex Buffer
     u32 VertBuffer2Offset; // Vertex Buffer2, redundant?
+    u32 NormalBuffer1Offset;
+    u32 NormalBuffer2Offset;
 
 };
 
@@ -611,7 +614,6 @@ weightTable weight_table @ SC2_MDL.WeightTableOffset;
 layerObjectEntryGC object_0_xbox[SC2_MDL.Objects0Count] @ SC2_MDL.Object0Offset;
 layerObjectEntryGC object_1_xbox[SC2_MDL.Objects1Count] @ SC2_MDL.Object1Offset;
 layerObjectEntryGC object_2_xbox[SC2_MDL.Objects2Count] @ SC2_MDL.Object2Offset;
-
 weightDef relative_position_normal1[weight_table.VertCount1] @ weight_table.WeightBufferOffset;
 weightDef relative_position_normal2[weight_table.VertCount2 * 2]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1);
 weightDef relative_position_normal3[weight_table.VertCount3 * 3]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2);
