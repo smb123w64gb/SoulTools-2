@@ -106,11 +106,11 @@ class FRead(object): #Generic file reader
         if(big_endian):
             self.endian ='>'
         self.file = f
-    def swapEndian():
+    def swapEndian(self):
         if(self.endian == '>'):
-            self.endian='<'
+            self.endian = '<'
         else:
-            self.endian='>'
+            self.endian = '>'
     def u32(self):
         return struct.unpack(self.endian+'I', self.file.read(4))[0]
     def u16(self):
@@ -186,7 +186,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoneHeaderOffset = 0
         def read(self,f):
             self.MAGIC = f.read(4)
-            if(self.MAGIC == 'VMG.'):
+            if(self.MAGIC == b'VMG.'):
                 f.swapEndian()
                 self.Endian = True
             self.Version = f.u8()
@@ -497,6 +497,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             rt += str("Face Count: %i @ %s\n" % (self.FaceCount,hex(self.FaceOffset)))
             return rt
             
+    class LayerObjectEntryGC(object):
+        def __init__(self):
+            self.test = 0
     def __init__(self):
         self.f = None
         self.header = self.Header()
@@ -528,18 +531,21 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.boneInfo.append(a)
         self.f.seek(self.header.WeightTableOffset)
         self.wgtTbl.read(self.f)
+        layerType = self.LayerObjectEntryXbox
+        if(self.header.Endian):
+            layerType = self.LayerObjectEntryGC
         self.f.seek(self.header.Layer0Info[1])
         for x in range(self.header.Layer0Info[0]):
-            Layer = self.LayerObjectEntryXbox()
+            Layer = layerType()
             Layer.read(self.f)
             self.Object_0.append(Layer)
         self.f.seek(self.header.Layer1Info[1])
         for x in range(self.header.Layer1Info[0]):
-            Layer = self.LayerObjectEntryXbox()
+            Layer = layerType()
             Layer.read(self.f)
             self.Object_1.append(Layer)
         self.f.seek(self.header.Layer2Info[1])
         for x in range(self.header.Layer2Info[0]):
-            Layer = self.LayerObjectEntryXbox()
+            Layer = layerType()
             Layer.read(self.f)
             self.Object_2.append(Layer)

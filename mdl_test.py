@@ -7,7 +7,7 @@ mdl_file = open(sys.argv[1], "rb")
 mdl = model_fmt_sc2.VM()
 
 mdl.read(mdl_file)
-mdl_file.seek(0)
+'''mdl_file.seek(0)
 
 mdlOut = open(sys.argv[1] + "mod.vmx", "wb")
 mdlOut.write(mdl_file.read()) #copy the file
@@ -19,7 +19,7 @@ boneMax = len(mdl.boneInfo) - 1
 mdlOut.seek(0x6)
 mdlOut.write(struct.pack('B',1))
 
-'''
+
 mdlOut.seek(mdl.wgtTbl.WeightBufferOffset)
 
 for x in mdl.wgtTbl.WeightBuffer1:
