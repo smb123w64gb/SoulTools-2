@@ -1,6 +1,3 @@
-import type.float16;
-using float16 = le u16 [[format("type::impl::format_float16")]];
-
 enum console : u8 {
     UNK0     = 0,
     UNK1     = 1,
@@ -527,25 +524,54 @@ struct face{
     vertCount = value;
     }
 };
+enum VertexComponentFormat : u8
+{
+  NotPresent = 0,
+  Direct = 1,
+  Index8 = 2,
+  Index16 = 3,
+};
+enum CPArray : u8
+{
+  Position = 0,
+  Normal = 1,
+
+  Color0 = 2,
+  Color1 = 3,
+
+  TexCoord0 = 4,
+  TexCoord1 = 5,
+  TexCoord2 = 6,
+  TexCoord3 = 7,
+  TexCoord4 = 8,
+  TexCoord5 = 9,
+  TexCoord6 = 10,
+  TexCoord7 = 11,
+
+  XF_A = 12,  // Usually used for position matrices
+  XF_B = 13,  // Usually used for normal matrices
+  XF_C = 14,  // Usually used for tex coord matrices
+  XF_D = 15,  // Usually used for light objects
+};
 struct layerObjectEntryGC{
-    u8 Unk0; // These unk are consistent with skinned/static meshes
-    u8 Unk1;
-    u8 Unk2;
-    u8 Unk3;
-    u8 Unk4;
-    u8 Unk5;
-    u8 Unk6;
-    u8 Unk7;
-    u8 Unk8;
-    u8 Unk9;
-    u8 IndiceType1;
-    u8 IndiceType2;
-    u8 IndiceType3;
+    CPArray Unk0; // These unk are consistent with skinned/static meshes
+    CPArray Unk1;
+    CPArray Unk2;
+    CPArray Unk3;
+    CPArray Unk4;
+    CPArray Unk5;
+    CPArray Unk6;
+    CPArray Unk7;
+    CPArray Unk8;
+    CPArray Unk9;
+    VertexComponentFormat IndiceType1;
+    VertexComponentFormat IndiceType2;
+    VertexComponentFormat IndiceType3;
     meshGCNContent IndiceType4;
     u16 FaceCount;
     u32 MatrixOffset;
     u32 MaterialOffset;
-    u32 Position1Offset; //Vertex Buffer1
+    u32 Position1Offset; //Vertex Buffer1 
     u32 Position2Offset; //Vertex Buffer2
     u32 Normal1Offset; //Normal Buffer1
     u32 Normal2Offset; //Normal Buffer2
@@ -614,6 +640,7 @@ weightTable weight_table @ SC2_MDL.WeightTableOffset;
 layerObjectEntryGC object_0_xbox[SC2_MDL.Objects0Count] @ SC2_MDL.Object0Offset;
 layerObjectEntryGC object_1_xbox[SC2_MDL.Objects1Count] @ SC2_MDL.Object1Offset;
 layerObjectEntryGC object_2_xbox[SC2_MDL.Objects2Count] @ SC2_MDL.Object2Offset;
+
 weightDef relative_position_normal1[weight_table.VertCount1] @ weight_table.WeightBufferOffset;
 weightDef relative_position_normal2[weight_table.VertCount2 * 2]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1);
 weightDef relative_position_normal3[weight_table.VertCount3 * 3]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2);
