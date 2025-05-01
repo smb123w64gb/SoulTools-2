@@ -498,8 +498,53 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             return rt
             
     class LayerObjectEntryGC(object):
+        def findmaxVerts(self):
+            maxi = 0
+            for x in self.Mesh:
+                
+                if(x == 0xFFFF):
+                    pass
+                elif(maxi < x):
+                    maxi = x
+            return maxi
         def __init__(self):
-            self.test = 0
+            self.unk0 = 0
+            self.unk1 = 0
+            self.unk2 = 0
+            self.idxType = [2,2,2] # Index8 = 2 / Index16 = 3
+            self.IndiceType4 = 0
+            self.FaceCount = 0
+            self.MatrixOffset = 0
+            self.MaterialOffset = 0
+            self.Position1Offset = 0
+            self.Position2Offset = 0
+            self.Normal1Offset = 0
+            self.Normal2Offset = 0
+            self.ColorOffset = 0
+            self.TexCoordOffset = 0
+            self.FaceOffset = 0
+            self.unkE = 0
+            self.Mesh = []
+        def read(self,f):
+            self.unk0 = f.u32()
+            self.unk1 = f.u32()
+            self.unk2 = f.u16()
+            self.idxType = [f.u8(),f.u8(),f.u8()] # Index8 = 2 / Index16 = 3
+            self.IndiceType4 = f.u8()
+            self.FaceCount = f.u16()
+            self.MatrixOffset = f.u32()
+            self.MaterialOffset = f.u32()
+            self.Position1Offset = f.u32()
+            self.Position2Offset = f.u32()
+            self.Normal1Offset = f.u32()
+            self.Normal2Offset = f.u32()
+            self.ColorOffset = f.u32()
+            self.TexCoordOffset = f.u32()
+            self.FaceOffset = f.u32()
+            self.unkE = f.u32()
+
+            f.seek(self.FaceOffset)
+            
     def __init__(self):
         self.f = None
         self.header = self.Header()
