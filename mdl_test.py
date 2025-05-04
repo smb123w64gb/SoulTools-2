@@ -7,6 +7,46 @@ mdl_file = open(sys.argv[1], "rb")
 mdl = model_fmt_sc2.VM()
 
 mdl.read(mdl_file)
+#print(mdl.Object_0[0].Possition)
+curtop = 1
+
+def triangle_strip_to_list(tri_data):
+    #assume tristrip
+    triangles = []
+    for i in range(len(tri_data) - 2):
+        tri_a = tri_data[i]
+        tri_b = tri_data[i + 1]
+        tri_c = tri_data[i + 2]
+        if ((tri_a != tri_b and tri_b != tri_c and tri_c != tri_a) and (tri_a != 0xFFFF and tri_b != 0xFFFF and tri_c != 0xFFFF)):
+            if (i % 2 == 0):
+                triangles.append((tri_a, tri_b, tri_c))
+            else:
+                triangles.append((tri_a, tri_c, tri_b))
+    return triangles
+
+
+for x in mdl.Object_0:
+    print("g %i" % curtop)
+    for y in x.Possition:
+        print("v %f %f %f" % (y[0],y[1],y[2]))
+    
+    trilist = []
+    for y in x.Mesh:
+        tristrip = []
+        for z in y.IdxArr:
+            tristrip.append(z[0])
+        trilist.append(triangle_strip_to_list(tristrip))
+        
+     
+    for z in trilist:
+        
+        for zzz in z:
+            f_head = 'f'
+            for zz in zzz:
+                f_head += ' ' + str(zz+curtop)
+        print(f_head)
+    
+    curtop += x.topV
 '''mdl_file.seek(0)
 
 mdlOut = open(sys.argv[1] + "mod.vmx", "wb")
@@ -48,19 +88,7 @@ totalRigged = 0
 currentObj = 0
 currentVertH = 1
 
-def triangle_strip_to_list(tri_data):
-    #assume tristrip
-    triangles = []
-    for i in range(len(tri_data) - 2):
-        tri_a = tri_data[i]
-        tri_b = tri_data[i + 1]
-        tri_c = tri_data[i + 2]
-        if ((tri_a != tri_b and tri_b != tri_c and tri_c != tri_a) and (tri_a != 0xFFFF and tri_b != 0xFFFF and tri_c != 0xFFFF)):
-            if (i % 2 == 0):
-                triangles.append((tri_a, tri_b, tri_c))
-            else:
-                triangles.append((tri_a, tri_c, tri_b))
-    return triangles
+
              
 
 for x in mdl.Object_0:

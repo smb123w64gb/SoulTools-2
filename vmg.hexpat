@@ -524,6 +524,27 @@ struct face{
     vertCount = value;
     }
 };
+enum  PrimitiveType : u32
+{
+  Points,
+  Lines,
+  Triangles,
+  TriangleStrip,
+};
+enum CullMode : u32
+{
+  All,
+  Front,   // cull back-facing primitives
+  Back,  // cull front-facing primitives
+  None,    // cull all primitives
+};
+bitfield RasterizationState{
+CullMode cullmode : 2;
+padding : 1;
+PrimitiveType primitive : 2;
+
+
+};
 enum VertexComponentFormat : u8
 {
   NotPresent = 0,
@@ -553,6 +574,35 @@ enum CPArray : u8
   XF_C = 14,  // Usually used for tex coord matrices
   XF_D = 15,  // Usually used for light objects
 };
+    VertexComponentFormat IType1 = 0;
+    VertexComponentFormat IType2 = 0;
+    VertexComponentFormat IType3 = 0;
+    VertexComponentFormat IType4 = 0;
+struct GCPoly{
+match (IType1) {
+        (VertexComponentFormat::Index8): u8 VertIDX;
+        (VertexComponentFormat::Index16): u16 VertIDX;
+    }
+    match (IType2) {
+        (VertexComponentFormat::Index8): u8 ClrIDX;
+        (VertexComponentFormat::Index16): u16 ClrIDX;
+    }
+    match (IType3) {
+        (VertexComponentFormat::Index8): u8 uvIDX;
+        (VertexComponentFormat::Index16): u16 uvIDX;
+    }
+    match (IType4) {
+        (VertexComponentFormat::Index8): u8 NormalIDX;
+        (VertexComponentFormat::Index16): u16 NormalIDX;
+    }
+
+};
+struct GCIndc{
+RasterizationState State;
+u16 IndexCount;
+GCPoly Polys [IndexCount];
+};
+
 struct layerObjectEntryGC{
     CPArray Unk0; // These unk are consistent with skinned/static meshes
     CPArray Unk1;
@@ -567,7 +617,11 @@ struct layerObjectEntryGC{
     VertexComponentFormat IndiceType1;
     VertexComponentFormat IndiceType2;
     VertexComponentFormat IndiceType3;
-    meshGCNContent IndiceType4;
+    VertexComponentFormat IndiceType4;
+    IType1 = IndiceType1;
+    IType2 = IndiceType2;
+    IType3 = IndiceType3;
+    IType4 = IndiceType4;
     u16 FaceCount;
     u32 MatrixOffset;
     u32 MaterialOffset;
@@ -578,8 +632,25 @@ struct layerObjectEntryGC{
     u32 ColorOffset;
     u32 TexCoordOffset;
     u32 FaceOffset;
-    u32 UnkE;
+    u32 BoundingOffset;
+    GCIndc faceArray[FaceCount] @ FaceOffset;
+    if(Position1Offset > 0)
+        float test1 @ Position1Offset;
+    if(Position2Offset > 0)
+        float test2 @ Position2Offset;
+    if(Normal1Offset > 0)
+        float Ntest1 @ Normal1Offset;
+    if(Normal2Offset > 0)
+        float Ntest2 @ Normal2Offset;
+    if(ColorOffset > 0)
+        tVectorColorb CTest @ ColorOffset;
+    if(TexCoordOffset > 0)
+        float UVTest @ TexCoordOffset;
+    if(BoundingOffset > 0)
+        tVector4f BoundBox @ BoundingOffset;
+
 };
+
  struct layerObjectEntryXbox{
     vertCount = 0;
     meshXboxContent ObjectType; // 0x00=Static, 0x04=Skinned

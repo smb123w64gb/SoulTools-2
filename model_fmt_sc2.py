@@ -498,21 +498,31 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             return rt
             
     class LayerObjectEntryGC(object):
-        def findmaxVerts(self):
-            maxi = 0
-            for x in self.Mesh:
-                
-                if(x == 0xFFFF):
-                    pass
-                elif(maxi < x):
-                    maxi = x
-            return maxi
+        class PolyHead(object):
+            def __init__(self,StrideArr):
+                self.Type = 0x90
+                self.StrideArr = StrideArr
+                self.IdxArr = []
+                self.large = [0,0,0,0]
+            def read(self,f):
+                self.Type = f.u8()
+                idxSize = f.u16()
+                for x in range(idxSize):
+                    idx = []
+                    for y in range(4):
+                        if(self.StrideArr[y] == 2):
+                            idx.append(f.u8())
+                        elif(self.StrideArr[y] == 3):
+                            idx.append(f.u16())
+                        if(self.large[y] < idx[y]):
+                            self.large[y] = idx[y]
+                    self.IdxArr.append(idx)
+                return (idxSize > 0)
         def __init__(self):
             self.unk0 = 0
             self.unk1 = 0
             self.unk2 = 0
-            self.idxType = [2,2,2] # Index8 = 2 / Index16 = 3
-            self.IndiceType4 = 0
+            self.idxType = [2,2,2,2] # Index8 = 2 / Index16 = 3
             self.FaceCount = 0
             self.MatrixOffset = 0
             self.MaterialOffset = 0
@@ -523,14 +533,16 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.ColorOffset = 0
             self.TexCoordOffset = 0
             self.FaceOffset = 0
-            self.unkE = 0
+            self.BoundingOffset = 0
             self.Mesh = []
+            self.topV = 0
+            self.Possition = []
         def read(self,f):
+            
             self.unk0 = f.u32()
             self.unk1 = f.u32()
             self.unk2 = f.u16()
-            self.idxType = [f.u8(),f.u8(),f.u8()] # Index8 = 2 / Index16 = 3
-            self.IndiceType4 = f.u8()
+            self.idxType = [f.u8(),f.u8(),f.u8(),f.u8()] # Index8 = 2 / Index16 = 3
             self.FaceCount = f.u16()
             self.MatrixOffset = f.u32()
             self.MaterialOffset = f.u32()
@@ -541,9 +553,22 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.ColorOffset = f.u32()
             self.TexCoordOffset = f.u32()
             self.FaceOffset = f.u32()
-            self.unkE = f.u32()
-
+            self.BoundingOffset = f.u32()
+            ret = f.tell()
             f.seek(self.FaceOffset)
+            toContinue = True
+            self.topV = 0
+            while(toContinue):
+                head = self.PolyHead(self.idxType)
+                toContinue = head.read(f)
+                if(toContinue):
+                    if(self.topV < head.large[0]):
+                        self.topV = head.large[0]
+                    self.Mesh.append(head)
+            f.seek(self.Position1Offset)
+            for x in range(self.topV):
+                self.Possition.append(f.f32_3())
+            f.seek(ret)
             
     def __init__(self):
         self.f = None
@@ -580,6 +605,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         if(self.header.Endian):
             layerType = self.LayerObjectEntryGC
         self.f.seek(self.header.Layer0Info[1])
+        
         for x in range(self.header.Layer0Info[0]):
             Layer = layerType()
             Layer.read(self.f)
