@@ -252,7 +252,7 @@ struct mdl_header{
     u16 Objects2Count;
     u16 BonesCount;
     u16 MaterialsCount;
-    u16 MeshCount; // always 1?
+    u16 WeightTableCount; // always 1?
     u32 TextureTableOffset;
     u32 MaterialOffset;
     u32 TextureMapOffset;
@@ -435,8 +435,8 @@ struct face{
     vertCount+=1;
     
     if(ObjectType == meshXboxContent::STATICXBOX){
-    buffer4 staticVerts[vertCount] @ Buffer4Offset;
-    tVector4f CenterRadius @ Buffer4Offset + sizeof(staticVerts);
+    buffer4 staticVerts[vertCount] @ Buffer1Offset;
+    tVector4f CenterRadius @ Buffer1Offset + sizeof(staticVerts);
     }else if(ObjectType == meshXboxContent::SKINNEDXBOX){
     buffer1 color[vertCount] @ Buffer1Offset;
     buffer2 position[vertCount] @ Buffer2Offset;
@@ -472,15 +472,15 @@ VXT vxt @ SC2_MDL.TextureTableOffset;
 materialTable vxt_materials[SC2_MDL.MaterialsCount] @ SC2_MDL.MaterialOffset;
 boneInfo bone_data[SC2_MDL.BonesCount] @ SC2_MDL.BoneOffset;
 
-weightTable weight_table @ SC2_MDL.WeightTableOffset;
 
 layerObjectEntryXbox object_0_xbox[SC2_MDL.Objects0Count] @ SC2_MDL.Object0Offset;
 layerObjectEntryXbox object_1_xbox[SC2_MDL.Objects1Count] @ SC2_MDL.Object1Offset;
 layerObjectEntryXbox object_2_xbox[SC2_MDL.Objects2Count] @ SC2_MDL.Object2Offset;
-
+if(SC2_MDL.WeightTableCount > 0){
+weightTable weight_table @ SC2_MDL.WeightTableOffset;
 weightDef relative_position_normal1[weight_table.VertCount1] @ weight_table.WeightBufferOffset;
 weightDef relative_position_normal2[weight_table.VertCount2 * 2]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1);
 weightDef relative_position_normal3[weight_table.VertCount3 * 3]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2);
 weightDef relative_position_normal4[weight_table.VertCount4 * 4]@ weight_table.WeightBufferOffset + sizeof(relative_position_normal1) + sizeof(relative_position_normal2) + sizeof(relative_position_normal3);
-
+};
 u8 unkarray[40] @ SC2_MDL.BoneHeaderOffset; 
