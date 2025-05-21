@@ -176,7 +176,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Layer2Info = tmpOnC.copy()
             self.BoneInfo = tmpOnC.copy()
             self.MaterialsInfo = tmpOnC.copy()
-            self.MeshCount = 1
+            self.WeightTableCount = 0
             self.TextureTableOffset = 0
             self.TextureMapOffset = 0
             self.ukn_MatrixTableOffset = 0
@@ -198,7 +198,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Layer2Info[0] = f.u16()
             self.BoneInfo[0] = f.u16()
             self.MaterialsInfo[0] = f.u16()
-            self.MeshCount = f.u16()
+            self.WeightTableCount = f.u16()
             self.TextureTableOffset = f.u32()
             self.MaterialsInfo[1] = f.u32()
             self.TextureMapOffset = f.u32()
@@ -429,7 +429,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     pass
                 elif(maxi < x):
                     maxi = x
-            return maxi
+            return maxi + 1
         def read(self,f):
                 self.ObjectType = f.u16()
                 self.PrimitiveType = f.u16()
@@ -471,7 +471,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     self.RiggedVerts[2] = verts
                     
                 else:
-                    f.seek(self.Buffer4Offset)
+                    f.seek(self.Buffer1Offset)
                     for x in range(vertCount):
                         vert = self.BufferStaticVertex()
                         vert.read(f)
@@ -599,8 +599,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             a = self.BoneInfo()
             a.read(self.f)
             self.boneInfo.append(a)
-        self.f.seek(self.header.WeightTableOffset)
-        self.wgtTbl.read(self.f)
+        if(self.header.WeightTableCount):
+            self.f.seek(self.header.WeightTableOffset)
+            self.wgtTbl.read(self.f)
         layerType = self.LayerObjectEntryXbox
         if(self.header.Endian):
             layerType = self.LayerObjectEntryGC

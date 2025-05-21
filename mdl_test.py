@@ -23,11 +23,29 @@ def triangle_strip_to_list(tri_data):
             else:
                 triangles.append((tri_a, tri_c, tri_b))
     return triangles
-
-
+def fromTriangleStrip(input):
+    newFace = []
+    t1 = 0
+    t2 = 0
+    t3 = 0
+    for i in range(len(input)-2):
+        if(i % 2 == 1):
+            t1=(input[i + 0])
+            t2=(input[i + 1])
+            t3=(input[i + 2])
+        else:
+            t1=(input[i + 0])
+            t2=(input[i + 2])
+            t3=(input[i + 1])
+        if (t1 == t2):continue
+        if (t2 == t3):continue
+        if (t3 == t1):continue
+        newFace.append((t1,t2,t3))
+    return newFace
+'''
 for x in mdl.Object_0:
     print("g %i" % curtop)
-    for y in x.Possition:
+    for y in x.Mesh:
         print("v %f %f %f" % (y[0],y[1],y[2]))
     
     trilist = []
@@ -47,7 +65,7 @@ for x in mdl.Object_0:
         print(f_head)
     
     curtop += x.topV
-'''mdl_file.seek(0)
+mdl_file.seek(0)
 
 mdlOut = open(sys.argv[1] + "mod.vmx", "wb")
 mdlOut.write(mdl_file.read()) #copy the file
@@ -77,7 +95,7 @@ for y in mdl.wgtTbl.WeightBuffer4:
         mdlOut.write(x.as_bytes())
 
 
-''''''
+'''
 
 obj = open(sys.argv[1] + ".obj", "w")
 
@@ -105,11 +123,12 @@ for x in mdl.Object_0:
             
             for y in x.RiggedVerts[1]:
                 obj.write(str("v %f %f %f\n"%(y.Position[0],y.Position[1],y.Position[2])))
+    #print(x.Mesh)
     polygons = triangle_strip_to_list(x.Mesh)
+    print(x.PrimitiveType)
     for pp in polygons:
         obj.write("f")
         for p in pp:
             obj.write(str(" %i" % (p+currentVertH)))
         obj.write("\n")
     currentVertH += len(x.StaticVerts) + len(x.RiggedVerts[1])
-'''
