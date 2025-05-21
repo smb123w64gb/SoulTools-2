@@ -117,18 +117,26 @@ for x in mdl.Object_0:
             
             for y in x.StaticVerts:
                 obj.write(str("v %f %f %f\n"%(y.Position[0],y.Position[1],y.Position[2])))
+            for y in x.StaticVerts:
+                obj.write(str("vn %f %f %f\n"%(y.Normal[0],y.Normal[1],y.Normal[2])))
+            for y in x.StaticVerts:
+                obj.write(str("vt %f %f\n"%(y.UV[0],y.UV[1])))
         case 4:
             obj.write(str("o Obj_%02i\n" % currentObj))
             currentObj+=1
             
             for y in x.RiggedVerts[1]:
                 obj.write(str("v %f %f %f\n"%(y.Position[0],y.Position[1],y.Position[2])))
+            for y in x.RiggedVerts[1]:
+                obj.write(str("vn %f %f %f\n"%(y.Normal[0],y.Normal[1],y.Normal[2])))
+            for y in x.RiggedVerts[0]:
+                obj.write(str("vt %f %f\n"%(y.UV[0],y.UV[1])))
     #print(x.Mesh)
     polygons = triangle_strip_to_list(x.Mesh)
     print(x.PrimitiveType)
     for pp in polygons:
         obj.write("f")
         for p in pp:
-            obj.write(str(" %i" % (p+currentVertH)))
+            obj.write(str(" %i/%i/%i" % (p+currentVertH,p+currentVertH,p+currentVertH)))
         obj.write("\n")
     currentVertH += len(x.StaticVerts) + len(x.RiggedVerts[1])
