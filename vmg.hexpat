@@ -538,6 +538,21 @@ enum CullMode : u32
   Back,  // cull front-facing primitives
   None,    // cull all primitives
 };
+enum ComponentFormat : u8
+{
+  UByte = 0,  // Invalid for normals
+  Byte = 1,
+  UShort = 2,  // Invalid for normals
+  Short = 3,
+  Float = 4,
+  // Known to be used by Fifa Street and Def Jam: Fight for New York
+  // See https://bugs.dolphin-emu.org/issues/12719
+  // Assumed to behave the same as float, but further testing is needed
+  InvalidFloat5 = 5,
+  // Not known to be used
+  InvalidFloat6 = 6,
+  InvalidFloat7 = 7,
+};
 bitfield RasterizationState{
 CullMode cullmode : 2;
 padding : 1;
@@ -551,6 +566,15 @@ enum VertexComponentFormat : u8
   Direct = 1,
   Index8 = 2,
   Index16 = 3,
+};
+enum  ColorFormat : u8
+{
+  RGB565 = 0,    // 16b
+  RGB888 = 1,    // 24b
+  RGB888x = 2,   // 32b
+  RGBA4444 = 3,  // 16b
+  RGBA6666 = 4,  // 24b
+  RGBA8888 = 5,  // 32b
 };
 enum CPArray : u8
 {
@@ -573,6 +597,47 @@ enum CPArray : u8
   XF_B = 13,  // Usually used for normal matrices
   XF_C = 14,  // Usually used for tex coord matrices
   XF_D = 15,  // Usually used for light objects
+};
+enum  CoordComponentCount : u8
+{
+  XY = 0,
+  XYZ = 1,
+};
+enum NormalComponentCount : u8
+{
+  N = 0,
+  NTB = 1,
+};
+enum  ColorComponentCount : u8
+{
+  RGB = 0,
+  RGBA = 1,
+};
+enum TexComponentCount : u8
+{
+  S = 0,
+  ST = 1,
+};
+bitfield UVAT_group0{
+bool NormalIndex3 : 1;
+bool ByteDequant : 1;
+
+ Tex0Frac : 5;
+ComponentFormat Tex0CoordFormat : 3;
+TexComponentCount Tex0CoordElements : 1;
+
+ColorFormat Color1Comp : 3;
+ColorComponentCount Color1Elements : 1;
+
+ColorFormat Color0Comp : 3;
+ColorComponentCount Color0Elements : 1;
+
+ComponentFormat NormalFormat : 3;
+NormalComponentCount NormalComponentCount : 1;
+
+ PosFrac : 5;
+ComponentFormat PosFormat : 3;
+CoordComponentCount PosElements : 1;
 };
     VertexComponentFormat IType1 = 0;
     VertexComponentFormat IType2 = 0;
@@ -605,10 +670,7 @@ GCPoly Polys [IndexCount];
 
 struct layerObjectEntryGC{
     CPArray Unk0; // These unk are consistent with skinned/static meshes
-    CPArray Unk1;
-    CPArray Unk2;
-    CPArray Unk3;
-    CPArray Unk4;
+    UVAT_group0 test;
     CPArray Unk5;
     CPArray Unk6;
     CPArray Unk7;
@@ -633,7 +695,7 @@ struct layerObjectEntryGC{
     u32 TexCoordOffset;
     u32 FaceOffset;
     u32 BoundingOffset;
-    GCIndc faceArray[FaceCount] @ FaceOffset;
+    GCIndc faceArray[1] @ FaceOffset;
     if(Position1Offset > 0)
         float test1 @ Position1Offset;
     if(Position2Offset > 0)
