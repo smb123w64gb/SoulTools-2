@@ -224,6 +224,27 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             rt += str("BoneInfo count %i @ %s\n"%(self.BoneInfo['count'],hex(self.BoneInfo['offset'])))
             rt += str("MaterialsInfo count %i @ %s\n"%(self.MaterialsInfo['count'],hex(self.MaterialsInfo['offset'])))
             return rt
+    class Material(object):
+        class MaterialMap(object):
+            def __init__(self):
+                self.type = 1
+                self.size = 36
+                
+        def __init__(self):
+            self.Type = 0
+            self.unk1 = 0
+            self.unk2 = 0
+            self.CullMode = 0
+            self.OpacitySrc = 0
+            self.TextureIdx0 = 0
+            self.TextureIdx1 = None
+            self.TextureIdx2 = None
+            self.TextureMap0 = None
+            self.TextureMap1 = None
+            self.TextureMap2 = None
+
+
+
     class MatrixUnk(object):
         def __init__(self):
             self.unk = 0
@@ -274,43 +295,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.unk2 = f.u8()
             if(self.BoneNameOffset):
                 self.Name = f.getString(self.BoneNameOffset)
-    class Texture(object):
-        class Data(object):
-            def __init__(self):
-                self.TexturePaletteCLUTOffset = 0 #TEXTURE PALETTE ROW OFFSET
-                self.Flags = 0
-                self.Unk1 = 0 #00000000
-                self.HeightVisible = 0 #visible height ONLY IN TYPE 2
-                self.WidthVisible = 0 #visible width ONLY IN TYPE 2
-                self.TextureDataOffset = 0 # color look up table, if DXT this is the image data addr
-                self.ImageType = D3DFORMAT.D3DFMT_DXT1 #DirectX spec texture enum
-                self.Height = 0 # dimension but in multiples of 8
-                self.Width = 0 # dimension but in multiples of 8
-                self.MipMapCount = 1 # mip count range [1 - 6]
-                self.Pad2 = 0 # pad to align
-                self.DiffuseBytes = bytearray.fromhex("1BF8000005055050")
-                self.MipMapBytes = bytearray()
-                self.Palette = bytearray()
-                self.TextureSize = 0
-        def __init__(self):
-            self.MAGIC = "VXT"
-            self.type = 0
-            self.Unk01_flag = 0
-            self.Unk02_flag = 0
-            self.Pad = 0
-            self.TextureCount = 0
-            self.Pad2 = 0
-            self.HeaderLength = 0
-            self.HeaderBlockSize = 0
-        def read(self,f):
-            self.MAGIC = f.read(4)
-            self.type = f.u8()
-            self.Unk01_flag = f.u8()
-            self.Unk02_flag = f.u8()
-            self.Pad = f.u8()
-            self.TextureCount = f.u32()
-            self.HeaderLength = f.u32()
-            self.HeaderBlockSize = f.u32()
     class WeightTable(object):
         class WeightDef(object):
             def __init__(self):
@@ -583,8 +567,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
     def read(self,f):
         self.f = FRead(f)
         self.header.read(self.f)
+
         self.f.seek(self.header.ukn_MatrixTableOffset)
         self.unkMtx.read(self.f)
+
         self.f.seek(self.header.MatricesInfo['offset'])
         skipAmount = 320
         if(self.header.Endian):
@@ -594,14 +580,17 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             a.read(self.f)
             self.matrix_table.append(a)
             self.f.seek(skipAmount,1)
+        
         self.f.seek(self.header.BoneInfo['offset'])
         for x in range(self.header.BoneInfo['count']):
             a = self.BoneInfo()
             a.read(self.f)
             self.boneInfo.append(a)
+        
         if(self.header.WeightTableCount):
             self.f.seek(self.header.WeightTableOffset)
             self.wgtTbl.read(self.f)
+        
         layerType = self.LayerObjectEntryXbox
         if(self.header.Endian):
             layerType = self.LayerObjectEntryGC

@@ -222,7 +222,12 @@ struct tVector4f{
     float Z;
     float W;
 }[[static,name(std::format("{},{},{},{}", X, Y, Z, W))]];
-
+struct matrixUnk{ // data Present in stage files? boundaries?
+    u16 Unk1;
+    u16 Matrix2Count;
+    u32 Matrix2Offset; // if count is 0, then this will point to the material block
+}
+;
 struct matrixTable{
     u8 Type;
     u8 ParentBoneIdx; // parent object to this bone?
@@ -471,7 +476,7 @@ matrixTable MatrixTBL[SC2_MDL.MatricesCount] @ SC2_MDL.MatrixTableOffset;
 VXT vxt @ SC2_MDL.TextureTableOffset;
 materialTable vxt_materials[SC2_MDL.MaterialsCount] @ SC2_MDL.MaterialOffset;
 boneInfo bone_data[SC2_MDL.BonesCount] @ SC2_MDL.BoneOffset;
-
+matrixUnk unkMtx @ SC2_MDL.ukn_MatrixTableOffset;
 
 layerObjectEntryXbox object_0_xbox[SC2_MDL.Objects0Count] @ SC2_MDL.Object0Offset;
 layerObjectEntryXbox object_1_xbox[SC2_MDL.Objects1Count] @ SC2_MDL.Object1Offset;
