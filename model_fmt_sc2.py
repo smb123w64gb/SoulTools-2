@@ -153,6 +153,59 @@ class FRead(object): #Generic file reader
         if(offset):
             self.seek(ret)
         return result
+class FWrite(object): #Generic file writer
+    def __init__(self,f,big_endian=False):
+        self.endian='<'
+        if(big_endian):
+            self.endian ='>'
+        self.file = f
+    def swapEndian(self):
+        if(self.endian == '>'):
+            self.endian = '<'
+        else:
+            self.endian = '>'
+    def u32(self,val):
+        self.f.write(struct.pack(self.endian+'I', val))
+    def u16(self,val):
+        self.f.write(struct.pack(self.endian+'H', val))
+    def u8(self,val):
+        self.f.write(struct.pack(self.endian+'B', val))
+    def u8_4(self,val):
+        self.f.write(struct.pack(self.endian+'BBBB', val[0],val[1],val[2],val[3]))
+    def s32(self,val):
+        self.f.write(struct.pack(self.endian+'i', val))
+    def s16(self,val):
+        self.f.write(struct.pack(self.endian+'h', val))
+    def s8(self,val):
+        self.f.write(struct.pack(self.endian+'b', val))
+    def f16(self,val):
+        self.f.write(struct.pack(self.endian+'e', val))
+    def f32(self,val):
+        self.f.write(struct.pack(self.endian+'f', val))
+    def f32_4(self,val):
+        self.f.write(struct.pack(self.endian+'ffff',val[0],val[1],val[2],val[3]))
+    def f32_3(self,val):
+        self.f.write(struct.pack(self.endian+'fff',val[0],val[1],val[2]))
+    def f32_2(self,val):
+        self.f.write(struct.pack(self.endian+'ff',val[0],val[1]))
+    def seek(self,offset,whence=0):
+        self.file.seek(offset,whence)
+    def tell(self):
+        return self.file.tell()
+    def write(self,x):
+        return self.file.write(x)
+    def getString(self,offset = 0):
+        if(offset):
+            ret = self.file.tell()
+            self.seek(offset)
+        result = ""
+        tmpChar = self.file.read(1)
+        while ord(tmpChar) != 0:
+            result += tmpChar.decode("utf-8")
+            tmpChar = self.file.read(1)
+        if(offset):
+            self.seek(ret)
+        return result
 class MTX(object):
     def __init__(self):
         self.matrix = [[0.0,0.0,0.0,0.0]*4]
@@ -161,14 +214,35 @@ class MTX(object):
         for x in range(4):
             tmp.append(f.f32_4())
         self.matrix = tmp
+textureOffset = 0
+def calc_texture_index(offset):
+    idx = None
+    if(offset>textureOffset):#0 just means there is no index
+        rel = offset - (textureOffset - 0x14)#Skip to where the vxt is and the header
+        idx = int(rel/0x20)
+    return idx
+materialOffset = 0
+def calc_material_index(offset):
+    rel = offset - materialOffset
+    idx = int(rel/0x50)
+    return idx
+materixOffset = 0
+def calc_materix_index(offset):
+    rel = offset - materixOffset
+    idx = int(rel/400)
+    return idx
 class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
     class Header(object):
         def __init__(self):
             tmpOnC = {"offset":0,"count":0} #Intended to quick n dirty offset & count
-            self.MAGIC = 'VMX.'
+            self.MAGIC = b'VMX.'
             self.Version = 4
             self.Endian = False #False LITTLE, True BIG
             #if(self.Version == 3):#(GC)PPC is Big Endian, (PS2)Mips & (Xbox)x86 is Little Endian
+            self.textureOffsetPoint = 0x10
+            self.textureCount = 0x13
+            self.isLoaded = 0
+            self.unk0 = 0
             self.ModelContent = 0
             self.MatricesInfo = tmpOnC.copy()
             self.Layer0Info = tmpOnC.copy()
@@ -190,7 +264,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 f.swapEndian()
                 self.Endian = True
             self.Version = f.u8()
-            f.seek(4,1)
+            self.textureOffsetPoint = f.u8()
+            self.textureCount = f.u8()
+            self.isLoaded = f.u8()
+            self.unk0 = f.u8()
             self.modelContent = f.u8()
             self.MatricesInfo['count'] = f.u16()
             self.Layer0Info['count'] = f.u16()
@@ -209,9 +286,36 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Layer2Info['offset'] = f.u32()
             self.WeightTableOffset = f.u32()
             self.ukn01_offset = f.u32()
-            self.BoneInfo[1] = f.u32()
+            self.BoneInfo['offset'] = f.u32()
             self.BoneNameOffset = f.u32()
             self.BoneHeaderOffset = f.u32()
+        def write(self,f):
+            f.write(self.magic)
+            f.u8(self.Version)
+            f.u8(self.textureOffsetPoint)
+            f.u8(self.textureCount)
+            f.u8(self.isLoaded)
+            f.u8(self.unk0)
+            f.u8(self.modelContent)
+            f.u16(self.MatricesInfo['count'])
+            f.u16(self.Layer0Info['count'])
+            f.u16(self.Layer1Info['count'])
+            f.u16(self.Layer2Info['count'])
+            f.u16(self.BoneInfo['count'])
+            f.u16(self.WeightTableCount)
+            f.u32(self.TextureTableOffset)
+            f.u32(self.MaterialsInfo['offset'])
+            f.u32(self.TextureMapOffset)
+            f.u32(self.MatricesInfo['offset'])
+            f.u32(self.ukn_MatrixTableOffset)
+            f.u32(self.Layer0Info['offset'])
+            f.u32(self.Layer1Info['offset'])
+            f.u32(self.Layer2Info['offset'])
+            f.u32(self.WeightTableOffset)
+            f.u32(self.ukn01_offset)
+            f.u32(self.BoneInfo['offset'])
+            f.u32(self.BoneNameOffset)
+            f.u32(self.BoneHeaderOffset)
         def __str__(self):
             rt = ""
             rt += str("Magic: %s\n" % self.MAGIC)
@@ -229,7 +333,13 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             def __init__(self):
                 self.type = 1
                 self.size = 36
-                
+                self.value = [0.0]*8
+            def read(self,f):
+                self.type = f.u16()
+                self.size = f.u16()
+                self.value = []
+                for x in range(int((self.size - 4)/4)):
+                    self.value.append(f.f32())
         def __init__(self):
             self.Type = 0
             self.unk1 = 0
@@ -239,12 +349,44 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.TextureIdx0 = 0
             self.TextureIdx1 = None
             self.TextureIdx2 = None
-            self.TextureMap0 = None
+            self.TextureMap0 = self.MaterialMap()
             self.TextureMap1 = None
             self.TextureMap2 = None
-
-
-
+            self.AmbientRGBA = [0.0]*4
+            self.DiffuseRGBA = [1.0]*4
+            self.SpecularRGBA = [0.2,0.2,0.2,20.0]
+        def read(self,f):
+            self.Type = f.u8()
+            self.unk1 = f.u8()
+            self.unk2 = f.u8()
+            self.CullMode = f.u8()
+            self.OpacitySrc = f.u32()
+            self.TextureIdx0 = calc_texture_index(f.u32())
+            self.TextureIdx1 = calc_texture_index(f.u32())
+            self.TextureIdx2 = calc_texture_index(f.u32())
+            map0 = f.u32()
+            if(map0>0):
+                ret = f.tell()
+                f.seek(map0)
+                self.TextureMap0.read(f)
+                f.seek(ret)
+            map1 = f.u32()
+            if(map1>0):
+                self.TextureMap1 = self.MaterialMap()
+                ret = f.tell()
+                f.seek(map1)
+                self.TextureMap1.read(f)
+                f.seek(ret)
+            map2 = f.u32()
+            if(map2>0):
+                self.TextureMap2 = self.MaterialMap()
+                ret = f.tell()
+                f.seek(map2)
+                self.TextureMap2.read(f)
+                f.seek(ret)
+            self.AmbientRGBA = f.f32_4()
+            self.DiffuseRGBA = f.f32_4()
+            self.SpecularRGBA = f.f32_4()
     class MatrixUnk(object):
         def __init__(self):
             self.unk = 0
@@ -279,9 +421,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoneNameOffset = 0
             self.unk0 = []
             self.unk1 = 0
-            self.BoneParentIdx = 0
+            self.BoneParentIdx = -1
             self.BoneIdx = 0
-            self.unk2 = 0
+            self.unk2 = 1
             self.Name = ""
         def read(self,f):
             self.EndPositionXYZScale = f.f32_4()
@@ -394,8 +536,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.ObjectType = 0
             self.PrimitiveType = 0
             self.FaceCount = 0
-            self.MatrixOffset = 0
-            self.MaterialOffset = 0
+            self.MatrixIndex = 0
+            self.MaterailIndex = 0
             self.FaceOffset = 0
             self.Buffer1Offset = 0
             self.Buffer2Offset = 0
@@ -408,7 +550,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         def findmaxVerts(self):
             maxi = 0
             for x in self.Mesh:
-                
                 if(x == 0xFFFF):
                     pass
                 elif(maxi < x):
@@ -418,8 +559,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.ObjectType = f.u16()
                 self.PrimitiveType = f.u16()
                 self.FaceCount = f.u32()
-                self.MatrixOffset = f.u32()
-                self.MaterialOffset = f.u32()
+                MatrixOffset = f.u32()
+                self.MatrixIndex = calc_materix_index(MatrixOffset)
+                MaterialOffset = f.u32()
+                self.MaterailIndex = calc_material_index(MaterialOffset)
                 self.FaceOffset = f.u32()
                 self.Buffer1Offset = f.u32()
                 self.Buffer2Offset = f.u32()
@@ -560,17 +703,26 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.unkMtx = self.MatrixUnk()
         self.wgtTbl = self.WeightTable()
         self.matrix_table = []
+        self.materials = []
         self.boneInfo = []
         self.Object_0 = []
         self.Object_1 = []
         self.Object_2 = []
+        self.texture = b''
+        self.unkArray = b'\x00'*40
     def read(self,f):
         self.f = FRead(f)
         self.header.read(self.f)
-
+        textureOffset = self.header.TextureTableOffset
+        textureSize = self.header.BoneHeaderOffset - textureOffset
+        self.f.seek(textureOffset)
+        self.texture = self.f.read(textureSize)
+        self.f.seek(self.header.BoneHeaderOffset)
+        self.unkArray = f.read(40)
         self.f.seek(self.header.ukn_MatrixTableOffset)
         self.unkMtx.read(self.f)
 
+        materixOffset = self.header.MatricesInfo['offset']
         self.f.seek(self.header.MatricesInfo['offset'])
         skipAmount = 320
         if(self.header.Endian):
@@ -580,7 +732,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             a.read(self.f)
             self.matrix_table.append(a)
             self.f.seek(skipAmount,1)
-        
+        materialOffset = self.header.MaterialsInfo['offset']
+        self.f.seek(self.header.MaterialsInfo['offset'])
+        for x in range(self.header.MaterialsInfo['count']):
+            a = self.Material()
+            a.read(self.f)
+            self.materials.append(a)
         self.f.seek(self.header.BoneInfo['offset'])
         for x in range(self.header.BoneInfo['count']):
             a = self.BoneInfo()
