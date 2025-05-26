@@ -164,7 +164,7 @@ class MTX(object):
 class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
     class Header(object):
         def __init__(self):
-            tmpOnC = [0,0] #Intended to quick n dirty offset & count
+            tmpOnC = {"offset":0,"count":0} #Intended to quick n dirty offset & count
             self.MAGIC = 'VMX.'
             self.Version = 4
             self.Endian = False #False LITTLE, True BIG
@@ -192,21 +192,21 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Version = f.u8()
             f.seek(4,1)
             self.modelContent = f.u8()
-            self.MatricesInfo[0] = f.u16()
-            self.Layer0Info[0] = f.u16()
-            self.Layer1Info[0] = f.u16()
-            self.Layer2Info[0] = f.u16()
-            self.BoneInfo[0] = f.u16()
-            self.MaterialsInfo[0] = f.u16()
+            self.MatricesInfo['count'] = f.u16()
+            self.Layer0Info['count'] = f.u16()
+            self.Layer1Info['count'] = f.u16()
+            self.Layer2Info['count'] = f.u16()
+            self.BoneInfo['count'] = f.u16()
+            self.MaterialsInfo['count'] = f.u16()
             self.WeightTableCount = f.u16()
             self.TextureTableOffset = f.u32()
-            self.MaterialsInfo[1] = f.u32()
+            self.MaterialsInfo['offset'] = f.u32()
             self.TextureMapOffset = f.u32()
-            self.MatricesInfo[1] = f.u32()
+            self.MatricesInfo['offset'] = f.u32()
             self.ukn_MatrixTableOffset = f.u32()
-            self.Layer0Info[1] = f.u32()
-            self.Layer1Info[1] = f.u32()
-            self.Layer2Info[1] = f.u32()
+            self.Layer0Info['offset'] = f.u32()
+            self.Layer1Info['offset'] = f.u32()
+            self.Layer2Info['offset'] = f.u32()
             self.WeightTableOffset = f.u32()
             self.ukn01_offset = f.u32()
             self.BoneInfo[1] = f.u32()
@@ -217,12 +217,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             rt += str("Magic: %s\n" % self.MAGIC)
             rt += str("Ver: %i\n" % self.Version)
             rt += str("ModelContent: %i\n"%self.ModelContent)
-            rt += str("Matrix count %i @ %s\n"%(self.MatricesInfo[0],hex(self.MatricesInfo[1])))
-            rt += str("Layer0Info count %i @ %s\n"%(self.Layer0Info[0],hex(self.Layer0Info[1])))
-            rt += str("Layer1Info count %i @ %s\n"%(self.Layer1Info[0],hex(self.Layer1Info[1])))
-            rt += str("Layer2Info count %i @ %s\n"%(self.Layer2Info[0],hex(self.Layer2Info[1])))
-            rt += str("BoneInfo count %i @ %s\n"%(self.BoneInfo[0],hex(self.BoneInfo[1])))
-            rt += str("MaterialsInfo count %i @ %s\n"%(self.MaterialsInfo[0],hex(self.MaterialsInfo[1])))
+            rt += str("Matrix count %i @ %s\n"%(self.MatricesInfo['count'],hex(self.MatricesInfo['offset'])))
+            rt += str("Layer0Info count %i @ %s\n"%(self.Layer0Info['count'],hex(self.Layer0Info['offset'])))
+            rt += str("Layer1Info count %i @ %s\n"%(self.Layer1Info['count'],hex(self.Layer1Info['offset'])))
+            rt += str("Layer2Info count %i @ %s\n"%(self.Layer2Info['count'],hex(self.Layer2Info['offset'])))
+            rt += str("BoneInfo count %i @ %s\n"%(self.BoneInfo['count'],hex(self.BoneInfo['offset'])))
+            rt += str("MaterialsInfo count %i @ %s\n"%(self.MaterialsInfo['count'],hex(self.MaterialsInfo['offset'])))
             return rt
     class MatrixUnk(object):
         def __init__(self):
@@ -585,17 +585,17 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.header.read(self.f)
         self.f.seek(self.header.ukn_MatrixTableOffset)
         self.unkMtx.read(self.f)
-        self.f.seek(self.header.MatricesInfo[1])
+        self.f.seek(self.header.MatricesInfo['offset'])
         skipAmount = 320
         if(self.header.Endian):
             skipAmount = 256
-        for x in range(self.header.MatricesInfo[0]):
+        for x in range(self.header.MatricesInfo['count']):
             a = self.MatrixTable()
             a.read(self.f)
             self.matrix_table.append(a)
             self.f.seek(skipAmount,1)
-        self.f.seek(self.header.BoneInfo[1])
-        for x in range(self.header.BoneInfo[0]):
+        self.f.seek(self.header.BoneInfo['offset'])
+        for x in range(self.header.BoneInfo['count']):
             a = self.BoneInfo()
             a.read(self.f)
             self.boneInfo.append(a)
@@ -605,19 +605,19 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         layerType = self.LayerObjectEntryXbox
         if(self.header.Endian):
             layerType = self.LayerObjectEntryGC
-        self.f.seek(self.header.Layer0Info[1])
+        self.f.seek(self.header.Layer0Info['offset'])
         
-        for x in range(self.header.Layer0Info[0]):
+        for x in range(self.header.Layer0Info['count']):
             Layer = layerType()
             Layer.read(self.f)
             self.Object_0.append(Layer)
-        self.f.seek(self.header.Layer1Info[1])
-        for x in range(self.header.Layer1Info[0]):
+        self.f.seek(self.header.Layer1Info['offset'])
+        for x in range(self.header.Layer1Info['count']):
             Layer = layerType()
             Layer.read(self.f)
             self.Object_1.append(Layer)
-        self.f.seek(self.header.Layer2Info[1])
-        for x in range(self.header.Layer2Info[0]):
+        self.f.seek(self.header.Layer2Info['offset'])
+        for x in range(self.header.Layer2Info['count']):
             Layer = layerType()
             Layer.read(self.f)
             self.Object_2.append(Layer)

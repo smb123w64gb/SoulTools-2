@@ -96,7 +96,7 @@ for y in mdl.wgtTbl.WeightBuffer4:
 
 
 '''
-
+'''
 obj = open(sys.argv[1] + ".obj", "w")
 
 
@@ -140,3 +140,4 @@ for x in mdl.Object_0:
             obj.write(str(" %i/%i/%i" % (p+currentVertH,p+currentVertH,p+currentVertH)))
         obj.write("\n")
     currentVertH += len(x.StaticVerts) + len(x.RiggedVerts[1])
+    '''
