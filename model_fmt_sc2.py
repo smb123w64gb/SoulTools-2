@@ -165,29 +165,29 @@ class FWrite(object): #Generic file writer
         else:
             self.endian = '>'
     def u32(self,val):
-        self.f.write(struct.pack(self.endian+'I', val))
+        self.file.write(struct.pack(self.endian+'I', val))
     def u16(self,val):
-        self.f.write(struct.pack(self.endian+'H', val))
+        self.file.write(struct.pack(self.endian+'H', val))
     def u8(self,val):
-        self.f.write(struct.pack(self.endian+'B', val))
+        self.file.write(struct.pack(self.endian+'B', val))
     def u8_4(self,val):
-        self.f.write(struct.pack(self.endian+'BBBB', val[0],val[1],val[2],val[3]))
+        self.file.write(struct.pack(self.endian+'BBBB', val[0],val[1],val[2],val[3]))
     def s32(self,val):
-        self.f.write(struct.pack(self.endian+'i', val))
+        self.file.write(struct.pack(self.endian+'i', val))
     def s16(self,val):
-        self.f.write(struct.pack(self.endian+'h', val))
+        self.file.write(struct.pack(self.endian+'h', val))
     def s8(self,val):
-        self.f.write(struct.pack(self.endian+'b', val))
+        self.file.write(struct.pack(self.endian+'b', val))
     def f16(self,val):
-        self.f.write(struct.pack(self.endian+'e', val))
+        self.file.write(struct.pack(self.endian+'e', val))
     def f32(self,val):
-        self.f.write(struct.pack(self.endian+'f', val))
+        self.file.write(struct.pack(self.endian+'f', val))
     def f32_4(self,val):
-        self.f.write(struct.pack(self.endian+'ffff',val[0],val[1],val[2],val[3]))
+        self.file.write(struct.pack(self.endian+'ffff',val[0],val[1],val[2],val[3]))
     def f32_3(self,val):
-        self.f.write(struct.pack(self.endian+'fff',val[0],val[1],val[2]))
+        self.file.write(struct.pack(self.endian+'fff',val[0],val[1],val[2]))
     def f32_2(self,val):
-        self.f.write(struct.pack(self.endian+'ff',val[0],val[1]))
+        self.file.write(struct.pack(self.endian+'ff',val[0],val[1]))
     def seek(self,offset,whence=0):
         self.file.seek(offset,whence)
     def tell(self):
@@ -290,7 +290,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoneNameOffset = f.u32()
             self.BoneHeaderOffset = f.u32()
         def write(self,f):
-            f.write(self.magic)
+            f.write(self.MAGIC)
             f.u8(self.Version)
             f.u8(self.textureOffsetPoint)
             f.u8(self.textureCount)
@@ -302,6 +302,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.u16(self.Layer1Info['count'])
             f.u16(self.Layer2Info['count'])
             f.u16(self.BoneInfo['count'])
+            f.u16(self.MaterialsInfo['count'])
             f.u16(self.WeightTableCount)
             f.u32(self.TextureTableOffset)
             f.u32(self.MaterialsInfo['offset'])
@@ -767,3 +768,72 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             Layer = layerType()
             Layer.read(self.f)
             self.Object_2.append(Layer)
+    def recalc(self):
+        head = 0x4C # Most stuff start here... after header
+        self.header.Layer0Info['offset'] = head
+        self.header.Layer0Info['count'] = len(self.Object_0)
+        head += len(self.Object_0)*40
+
+        self.header.Layer1Info['offset'] = head
+        self.header.Layer1Info['count'] = len(self.Object_1)
+        head += len(self.Object_1)*40
+
+        self.header.Layer2Info['offset'] = head
+        self.header.Layer2Info['count'] = len(self.Object_2)
+        head += len(self.Object_2)*40
+        self.header.TextureMapOffset = head
+        for x in self.materials:
+            head += x.TextureMap0.size
+            if x.TextureMap1 is not None:
+                 head += x.TextureMap1.size
+            if x.TextureMap2 is not None:
+                 head += x.TextureMap2.size
+        
+        head += 4#That part where 0xFFFFFFFF comes in... still dont know yet but we respect it
+
+        self.header.ukn_MatrixTableOffset = head
+        head += 8
+
+        self.header.MatricesInfo['offset'] = head
+        self.header.MatricesInfo['count'] = len(self.matrix_table)
+        head += len(self.matrix_table) * 400
+
+        self.unkMtx.Offset = head
+
+        self.header.MaterialsInfo['offset'] = head
+        self.header.MaterialsInfo['count'] = len(self.materials)
+        head += len(self.materials) * 80
+
+        for x in self.Object_0:
+            if(x.ObjectType == 4):
+                pass
+            else:
+                x.Buffer1Offset = head
+                head += len(x.StaticVerts) * 40
+            x.CenterRadiusOffset = head
+            head += 0x10
+        for x in self.Object_0:
+            if(head % 0x20):
+                head += 0x10 - (head % 0x20)
+            x.FaceOffset = head
+            print(hex(head))
+            head += len(x.Mesh)*2
+        self.header.BoneInfo['offset'] = head
+        self.header.BoneInfo['count'] = len(self.boneInfo)
+        head += len(self.boneInfo)*0x40
+        if(head % 0x20):
+            head += 0x20 - (head % 0x20)
+            
+        self.header.TextureTableOffset = head
+        head += len(self.texture)
+        self.header.BoneHeaderOffset = head
+        head += 40
+        self.header.BoneNameOffset = head
+        for x in self.boneInfo:
+            x.BoneNameOffset = head
+            head += len(x.Name)
+
+    def write(self,ff):
+        f = FWrite(ff)
+        self.recalc()
+        self.header.write(f)

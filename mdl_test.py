@@ -7,6 +7,7 @@ mdl_file = open(sys.argv[1], "rb")
 mdl = model_fmt_sc2.VM()
 
 mdl.read(mdl_file)
+mdl_file.close()
 #print(mdl.Object_0[0].Possition)
 curtop = 1
 
@@ -42,6 +43,9 @@ def fromTriangleStrip(input):
         if (t3 == t1):continue
         newFace.append((t1,t2,t3))
     return newFace
+
+mdl_out = open(sys.argv[2], "wb")
+mdl.write(mdl_out)
 '''
 for x in mdl.Object_0:
     print("g %i" % curtop)
