@@ -4,7 +4,7 @@ import swizzle
 
 def pilPal_RGBA(arr):
     colors = []
-    for x in range(256):
+    for x in range(int(len(arr)/3)):
         colors.append(struct.unpack("<I",(struct.pack("BBBB", arr[2+(x*3)],arr[1+(x*3)],arr[0+(x*3)],0xFF)))[0])
     return colors
 
@@ -30,11 +30,11 @@ for x in unsizzled:
 
 
 
-vxt_file = open(sys.argv[2], "rb")
+#vxt_file = open(sys.argv[2], "rb")
 
 newTex = texture_fmt_sc2.VTX()
-newTex.read(vxt_file)
-vxt_file.close()
+#newTex.read(vxt_file)
+#vxt_file.close()
 
 
 

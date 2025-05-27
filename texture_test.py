@@ -7,7 +7,7 @@ def u32le(file):
 newTex = texture_fmt_sc2.VTX()
 
 files = os.listdir(sys.argv[1])
-files = [ fi for fi in files if fi.endswith(".dds") ]
+files = [ fi for fi in files if fi.lower().endswith(".dds") ]
 for x in files:
     dds = open(sys.argv[1] + '\\' + x, "rb")
     dds.seek(0xC)
@@ -17,6 +17,7 @@ for x in files:
     mipcount = u32le(dds)
     dds.seek(0x54)
     dds_textType = u32le(dds)
+    print(dds_textType)
     format = texture_fmt_sc2.D3DFORMAT.D3DFMT_DXT1
     if(dds_textType == 894720068):
         format = texture_fmt_sc2.D3DFORMAT.D3DFMT_DXT4

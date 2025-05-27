@@ -172,6 +172,8 @@ class VTX(object):
             def writeData(self,f):
                 for x in self.Data:
                     w32(f,x)
+                for x in range(len(self.Data) - 256):
+                    w32(f,x)
         def __init__(self):
             self.pallet = None
             self.palletOff = 0

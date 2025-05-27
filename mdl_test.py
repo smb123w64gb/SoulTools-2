@@ -8,6 +8,7 @@ mdl = model_fmt_sc2.VM()
 
 mdl.read(mdl_file)
 mdl_file.close()
+
 #print(mdl.Object_0[0].Possition)
 curtop = 1
 
@@ -24,29 +25,14 @@ def triangle_strip_to_list(tri_data):
             else:
                 triangles.append((tri_a, tri_c, tri_b))
     return triangles
-def fromTriangleStrip(input):
-    newFace = []
-    t1 = 0
-    t2 = 0
-    t3 = 0
-    for i in range(len(input)-2):
-        if(i % 2 == 1):
-            t1=(input[i + 0])
-            t2=(input[i + 1])
-            t3=(input[i + 2])
-        else:
-            t1=(input[i + 0])
-            t2=(input[i + 2])
-            t3=(input[i + 1])
-        if (t1 == t2):continue
-        if (t2 == t3):continue
-        if (t3 == t1):continue
-        newFace.append((t1,t2,t3))
-    return newFace
-
+'''
+textureIn = open(sys.argv[3], "rb")
+mdl.texture = textureIn.read()
+textureIn.close()
 mdl_out = open(sys.argv[2], "wb")
 mdl.write(mdl_out)
 '''
+
 for x in mdl.Object_0:
     print("g %i" % curtop)
     for y in x.Mesh:
@@ -99,7 +85,7 @@ for y in mdl.wgtTbl.WeightBuffer4:
         mdlOut.write(x.as_bytes())
 
 
-'''
+
 '''
 obj = open(sys.argv[1] + ".obj", "w")
 
