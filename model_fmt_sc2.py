@@ -539,6 +539,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 return struct.pack('fffffffBBH',self.Pos[0],self.Pos[1],self.Pos[2],self.bWgt,self.Nor[0],self.Nor[1],self.Nor[2],self.bIdx,self.stat,0)
             def write(self,f):
                 f.write(self.as_bytes)
+            
         def __init__(self):
             self.VertCounts = [0]*4
             self.WeightBufferOffset = 0
@@ -549,6 +550,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.VertexBuff0 = [] # Color and UV
             self.VertexBuff1 = [] # IDK yet
             self.VertexBuff2 = [] # ^
+        def dynaSize(self):
+                totalSize = 0
+                for x in self.WeightBuffer:
+                    for y in x:
+                        totalSize+=0x20
+                return totalSize
         def read(self,f):
             totalVertCount = 0
             for x in range(4):
@@ -913,6 +920,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                  head += x.TextureMap2.size
         
         head += 4#That part where 0xFFFFFFFF comes in... still dont know yet but we respect it
+        self.header.WeightTableOffset = head
+        if(self.header.WeightTableCount):
+            head += 28
 
         self.header.ukn_MatrixTableOffset = head
         head += 8
@@ -930,6 +940,50 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         print(len(self.materials))
         self.header.MaterialsInfo['count'] = len(self.materials)
         head += len(self.materials) * 80
+        if(self.header.WeightTableCount):
+            self.wgtTbl.VertBuffer0Offset = head
+            head += len(self.wgtTbl.VertexBuff0)*12
+            if(head % 0x10):
+                head += 0x10 - (head % 0x10)
+            self.wgtTbl.VertBuffer1Offset = head
+            head += len(self.wgtTbl.VertexBuff1)*0x20
+            head += 0x400 #You know your guess is as good as mine
+            self.wgtTbl.VertBuffer2Offset = head
+            head += len(self.wgtTbl.VertexBuff2)*0x20
+            head += 0x400 #Again!
+            self.wgtTbl.WeightBufferOffset = head
+            head += self.wgtTbl.dynaSize()
+            head += 0x10 # 0XF gang attacks again!
+            for x in self.Object_0:
+                if(x.ObjectType == 4):
+                    x.Buffer1Offset = self.wgtTbl.VertBuffer0Offset
+                    x.Buffer2Offset = self.wgtTbl.VertBuffer1Offset
+                    x.Buffer3Offset = self.wgtTbl.VertBuffer2Offset
+                    if(head % 0x10):
+                        head += 0x10 - (head % 0x10)
+                    x.FaceOffset = head
+                    x.FaceCount = len(x.Mesh)
+                    head += len(x.Mesh)*2
+            for x in self.Object_1:
+                if(x.ObjectType == 4):
+                    x.Buffer1Offset = self.wgtTbl.VertBuffer0Offset
+                    x.Buffer2Offset = self.wgtTbl.VertBuffer1Offset
+                    x.Buffer3Offset = self.wgtTbl.VertBuffer2Offset
+                    if(head % 0x10):
+                        head += 0x10 - (head % 0x10)
+                    x.FaceOffset = head
+                    x.FaceCount = len(x.Mesh)
+                    head += len(x.Mesh)*2
+            for x in self.Object_2:
+                if(x.ObjectType == 4):
+                    x.Buffer1Offset = self.wgtTbl.VertBuffer0Offset
+                    x.Buffer2Offset = self.wgtTbl.VertBuffer1Offset
+                    x.Buffer3Offset = self.wgtTbl.VertBuffer2Offset
+                    if(head % 0x10):
+                        head += 0x10 - (head % 0x10)
+                    x.FaceOffset = head
+                    x.FaceCount = len(x.Mesh)
+                    head += len(x.Mesh)*2
 
         for x in self.Object_0:
             x.materixOffset = self.materixOffset
@@ -944,11 +998,14 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             x.CenterRadiusOffset = head
             head += 0x10
         for x in self.Object_0:
-            if(head % 0x10):
-                head += 0x10 - (head % 0x10)
-            x.FaceOffset = head
-            x.FaceCount = len(x.Mesh)
-            head += len(x.Mesh)*2
+            if(x.ObjectType == 4):
+                pass
+            else:
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
+                x.FaceOffset = head
+                x.FaceCount = len(x.Mesh)
+                head += len(x.Mesh)*2
         self.header.BoneInfo['offset'] = head
         self.header.BoneInfo['count'] = len(self.boneInfo)
         head += len(self.boneInfo)*0x40
