@@ -503,69 +503,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.u8(self.BoneIdx)
             f.u8(self.unk2)
     class WeightTable(object):
-        class WeightDef(object):
-            def __init__(self):
-                self.Pos = [0.0]*3
-                self.bWgt = 1.0
-                self.Nor = [0.0]*3
-                self.bIdx = 0
-                self.stat = 0
-            def read(self,f):
-                self.Pos = f.f32_3()
-                self.bWgt = f.f32()
-                self.Nor = f.f32_3()
-                self.bIdx = f.u8()
-                self.stat = f.u8()
-                f.seek(2,1)
-            def as_bytes(self):
-                return struct.pack('fffffffBBH',self.Pos[0],self.Pos[1],self.Pos[2],self.bWgt,self.Nor[0],self.Nor[1],self.Nor[2],self.bIdx,self.stat,0)
-        def __init__(self):
-            self.VertCounts = [0]*4
-            self.WeightBufferOffset = 0
-            self.VertBuffer1Offset = 0
-            self.VertBuffer2Offset = 0
-            self.WeightBuffer1 = []
-            self.WeightBuffer2 = []
-            self.WeightBuffer3 = []
-            self.WeightBuffer4 = []
-        def read(self,f):
-            for x in range(4):
-                self.VertCounts[x] = f.u32()
-            self.WeightBufferOffset = f.u32()
-            self.VertBuffer1Offset = f.u32()
-            self.VertBuffer2Offset = f.u32()
-            for idx,x in enumerate(self.VertCounts):
-                if(idx == 0):
-                    self.WeightBuffer1 = [self.WeightDef()] * x
-                elif(idx == 1):
-                    self.WeightBuffer2 = [self.WeightDef()] * (x * 2)
-                elif(idx == 2):
-                    self.WeightBuffer3 = [self.WeightDef()] * (x * 3)
-            f.seek(self.WeightBufferOffset)
-            for x in range(len(self.WeightBuffer1)):
-                a = self.WeightDef()
-                a.read(f)
-                self.WeightBuffer1[x] = a
-            for x in range(len(self.WeightBuffer2)):
-                a = self.WeightDef()
-                a.read(f)
-                self.WeightBuffer2[x] = a
-            for x in range(len(self.WeightBuffer3)):
-                a = self.WeightDef()
-                a.read(f)
-                self.WeightBuffer3[x] = a
-            high = 4
-            for x in range(self.VertCounts[3]):
-                arr = []
-                for y in range(high):
-                    a = self.WeightDef()
-                    a.read(f)
-                    arr.append(a)
-                    if(a.stat == 1):
-                        high +=1
-                self.WeightBuffer4.append(arr)
-    
-    class LayerObjectEntryXbox(object):
         class BufferColorUV(object):
             def __init__(self):
                 self.RGBA = [255]*4
@@ -584,6 +521,98 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.PositionScale = f.f32()
                 self.Normal = f.f32_3()
                 self.NormalScale = f.f32()
+        class WeightDef(object):
+            def __init__(self):
+                self.Pos = [0.0]*3
+                self.bWgt = 1.0
+                self.Nor = [0.0]*3
+                self.bIdx = 0
+                self.stat = 0
+            def read(self,f):
+                self.Pos = f.f32_3()
+                self.bWgt = f.f32()
+                self.Nor = f.f32_3()
+                self.bIdx = f.u8()
+                self.stat = f.u8()
+                f.seek(2,1)
+            def as_bytes(self):
+                return struct.pack('fffffffBBH',self.Pos[0],self.Pos[1],self.Pos[2],self.bWgt,self.Nor[0],self.Nor[1],self.Nor[2],self.bIdx,self.stat,0)
+            def write(self,f):
+                f.write(self.as_bytes)
+        def __init__(self):
+            self.VertCounts = [0]*4
+            self.WeightBufferOffset = 0
+            self.VertBuffer1Offset = 0
+            self.VertBuffer2Offset = 0
+            self.VertBuffer0Offset = 0 # Not found in this originaly(Bringing it in from outside)
+            self.WeightBuffer = [] #Flat with dynamic sizing 1,2,3,4,5,6, .......
+            self.VertexBuff0 = [] # Color and UV
+            self.VertexBuff1 = [] # IDK yet
+            self.VertexBuff2 = [] # ^
+        def read(self,f):
+            totalVertCount = 0
+            for x in range(4):
+                self.VertCounts[x] = f.u32()
+                totalVertCount += self.VertCounts[x] 
+            self.WeightBufferOffset = f.u32()
+            self.VertBuffer1Offset = f.u32()
+            self.VertBuffer2Offset = f.u32()
+            f.seek(self.WeightBufferOffset)
+            high = 1
+            for x in range(self.VertCounts[0]):
+                arr = []
+                for y in range(high):
+                    a = self.WeightDef()
+                    a.read(f)
+                    arr.append(a)
+                self.WeightBuffer.append(arr)
+            high = 2
+            for x in range(self.VertCounts[1]):
+                arr = []
+                for y in range(high):
+                    a = self.WeightDef()
+                    a.read(f)
+                    arr.append(a)
+                self.WeightBuffer.append(arr)
+            high = 3
+            for x in range(self.VertCounts[2]):
+                arr = []
+                for y in range(high):
+                    a = self.WeightDef()
+                    a.read(f)
+                    arr.append(a)
+
+                self.WeightBuffer.append(arr)
+            high = 4
+            for x in range(self.VertCounts[3]):
+                arr = []
+                for y in range(high):
+                    a = self.WeightDef()
+                    a.read(f)
+                    arr.append(a)
+                    if(a.stat == 1):
+                        high +=1
+                self.WeightBuffer.append(arr)
+            f.seek(self.VertBuffer1Offset)
+            for x in range(totalVertCount):
+                a = self.BufferScaleVertex()
+                a.read(f)
+                self.VertexBuff1.append(a)
+                
+            f.seek(self.VertBuffer2Offset)
+            for x in range(totalVertCount):
+                a = self.BufferScaleVertex()
+                a.read(f)
+                self.VertexBuff2.append(a)
+                
+            f.seek(self.VertBuffer0Offset)
+            for x in range(totalVertCount):
+                a = self.BufferColorUV()
+                a.read(f)
+                self.VertexBuff0.append(a)
+                
+    
+    class LayerObjectEntryXbox(object):
         class BufferStaticVertex(object):
             def __init__(self):
                 self.Position = [0.0] * 3
@@ -618,14 +647,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Buffer4Offset = 0
             self.CenterRadiusOffset = 0
             self.Mesh = []
-            self.RiggedVerts = [[]] * 3 #UV + Scalable Poss + UNK?
             self.StaticVerts = [] 
             self.CenterRadius = [0.0]*4
         def calc_material_index(self,offset):
             rel = offset - self.materialOffset
             idx = int(rel/0x50)
             return idx
-
         def calc_materix_index(self,offset):
             rel = offset - self.materixOffset
             idx = int(rel/400)
@@ -658,28 +685,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     self.Mesh.append(f.u16())
                 vertCount = self.findmaxVerts()
                 if(self.ObjectType == 4):
-                    f.seek(self.Buffer1Offset)
-                    uvs = []
-                    for x in range(vertCount):
-                        uv = self.BufferColorUV()
-                        uv.read(f)
-                        uvs.append(uv)
-                    self.RiggedVerts[0] = uvs
-                    f.seek(self.Buffer2Offset)
-                    verts = []
-                    for x in range(vertCount):
-                        vert = self.BufferScaleVertex()
-                        vert.read(f)
-                        verts.append(vert)
-                    self.RiggedVerts[1] = verts
-                    f.seek(self.Buffer3Offset)
-                    verts = []
-                    for x in range(vertCount):
-                        vert = self.BufferScaleVertex()
-                        vert.read(f)
-                        verts.append(vert)
-                    self.RiggedVerts[2] = verts
-                    
+                    pass #All Dyna meshes share the same buffer
                 else:
                     f.seek(self.Buffer1Offset)
                     for x in range(vertCount):
@@ -844,9 +850,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             a.read(self.f)
             self.boneInfo.append(a)
         
-        if(self.header.WeightTableCount):
-            self.f.seek(self.header.WeightTableOffset)
-            self.wgtTbl.read(self.f)
+        
         
         layerType = self.LayerObjectEntryXbox
         if(self.header.Endian):
@@ -873,6 +877,13 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             Layer.materixOffset = self.materixOffset
             Layer.read(self.f)
             self.Object_2.append(Layer)
+        for x in self.Object_0:
+            if(x.ObjectType == 4):
+                self.wgtTbl.VertBuffer0Offset = x.Buffer1Offset
+        if(self.header.WeightTableCount):
+            self.f.seek(self.header.WeightTableOffset)
+            self.wgtTbl.read(self.f)
+        
     def recalc(self):
         head = 0x4C # Most stuff start here... after header
         self.header.Layer0Info['offset'] = head
@@ -928,6 +939,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             else:
                 x.Buffer1Offset = head
                 head += len(x.StaticVerts) * 40
+            if(head % 0x10):
+                head += 0x10 - (head % 0x10)
             x.CenterRadiusOffset = head
             head += 0x10
         for x in self.Object_0:
@@ -980,6 +993,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         for x in self.Object_0:
             for y in x.StaticVerts:
                 y.write(f)
+            alighnment = f.tell() % 0x10
+            if(alighnment):
+                for y in range(0x10-alighnment):
+                    f.u8(0)
             f.f32_4(x.CenterRadius)
         for x in self.Object_0:
             alighnment = f.tell() % 0x10

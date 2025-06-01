@@ -31,7 +31,7 @@ mdl.texture = textureIn.read()
 textureIn.close()
 mdl_out = open(sys.argv[2], "wb")
 mdl.write(mdl_out)
-'''
+
 
 for x in mdl.Object_0:
     print("g %i" % curtop)
@@ -85,7 +85,7 @@ for y in mdl.wgtTbl.WeightBuffer4:
         mdlOut.write(x.as_bytes())
 
 
-
+'''
 '''
 obj = open(sys.argv[1] + ".obj", "w")
 
