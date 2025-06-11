@@ -1,3 +1,8 @@
+import std.core;
+import std.io;
+import std.mem;
+import type.magic;
+
 struct Header{
 char MAGIC[4];
 u32 size;
@@ -20,4 +25,11 @@ struct MMA{
 Header HDR;
 Entry ents[HDR.count];
 };
-be MMA file @ 0;
+u32 magic @ 0 [[hidden]];
+if(magic == 6778221){
+    std::core::set_endian(std::mem::Endian::Big);
+}else{
+    std::core::set_endian(std::mem::Endian::Little);
+};
+
+MMA file @ 0;
