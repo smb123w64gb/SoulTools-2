@@ -564,6 +564,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.WeightBufferOffset = f.u32()
             self.VertBuffer1Offset = f.u32()
             self.VertBuffer2Offset = f.u32()
+            sizeOfColor = (totalVertCount * 0xC) +(0x10 - ((totalVertCount * 0xC) % 0x10))
+            self.VertBuffer0Offset = self.VertBuffer1Offset - sizeOfColor
+            print(hex(self.VertBuffer0Offset))
             f.seek(self.WeightBufferOffset)
             high = 1
             for x in range(self.VertCounts[0]):
