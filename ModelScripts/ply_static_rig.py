@@ -83,7 +83,7 @@ for y in files:
         if(x.find('end_header')==0):
             start_read = True
     ply_mdls.append(mdl_txt)
-bone_idxes_fixup = [3,1,12,13,14,15,17,18,19,4,6,7,8,10,11]
+bone_idxes_fixup = [3,1,12,13,14,15,17,18,19,5,6,7,9,10,11]
 
 def applyTransform(vertex,bone_idx,bonez):
     next_bone = bone_idx
@@ -111,6 +111,29 @@ def applyTransform(vertex,bone_idx,bonez):
         
     loc = transforms
     return (loc[0],loc[1],loc[2])
+def applyTransform_norm(vertex,bone_idx,bonez):
+    next_bone = bone_idx
+    transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
+    chain = []
+    while(next_bone != 255):
+        bon = bonez[next_bone]
+        
+        chain.append(next_bone)
+        next_bone = bon.BoneParentIdx
+    chain.reverse()
+    for x in chain:
+        bon = bonez[x]
+        
+        d = euler_to_degrees(bon.Rotation[0],bon.Rotation[1],bon.Rotation[2])
+        e = degrees_to_radians(d[0],d[1],d[2])
+        e = [x for x in e]
+        r = mathutils.Euler((e[0],e[1],e[2]))
+        r = r.to_matrix()
+        r.invert()
+        transforms.rotate(r)
+        
+    loc = transforms
+    return (loc[0],loc[1],loc[2])
 
 mdl_file = open(sys.argv[2], "rb")
 
@@ -133,6 +156,7 @@ for idx,x in enumerate(ply_mdls):
     mdl_lay = x.toVMX()
     for y in mdl_lay.StaticVerts:
         y.Position = applyTransform(y.Position,bone_idxes_fixup[idx],mdl.boneInfo)
+        y.Normal = applyTransform_norm(y.Normal,bone_idxes_fixup[idx],mdl.boneInfo)
     mdl_lay.MaterailIndex = 0
     mdl_lay.MatrixIndex = bone_idxes_fixup[idx]
     mdl.Object_0.append(mdl_lay)
