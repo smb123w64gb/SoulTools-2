@@ -2,8 +2,6 @@ import model_fmt_sc2
 import sys
 import mathutils
 
-from scipy.spatial.transform import Rotation as R
-
 import math
 
 def euler_to_degrees(roll, pitch, yaw):
