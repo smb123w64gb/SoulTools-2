@@ -69,12 +69,20 @@ mdl_file.close()
 mdl_file = open(sys.argv[3], "wb")
 
 newmat = copy.deepcopy(mdl.materials[0])
-newmat.TextureIdx0 = 2
-mdl.materials.append(newmat)
+newmat.TextureIdx0 = 0
+newmat.TextureIdx1 = None
+newmat.TextureIdx2 = None
+mdl.materials[0] = newmat
+mdl.materials = mdl.materials[:1]
+mdl.matrix_table[0].Type = 2
+mdl.matrix_table = mdl.matrix_table[:1]
+
+
 mdl_lay = mdl_txt.toVMX()
 
-mdl_lay.MaterailIndex = 2
-mdl.Object_0[1] = mdl_lay
+mdl_lay.MaterailIndex = 0
+mdl.Object_0[0] = mdl_lay
+mdl.Object_0 = mdl.Object_0[:1]
 mdl.write(mdl_file)
 
 
