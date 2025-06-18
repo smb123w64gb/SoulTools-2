@@ -764,7 +764,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.idxType = [2,2,2,2] # Index8 = 2 / Index16 = 3
             self.FaceCount = 0
             self.MatrixOffset = 0
+            self.MatrixIndex = 0
             self.MaterialOffset = 0
+            self.MaterialIndex = 0
             self.Position1Offset = 0
             self.Position2Offset = 0
             self.Normal1Offset = 0
@@ -776,6 +778,14 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Mesh = []
             self.topV = 0
             self.Possition = []
+        def calc_material_index(self,offset):
+            rel = offset - self.materialOffset
+            idx = int(rel/0x50)
+            return idx
+        def calc_materix_index(self,offset):
+            rel = offset - self.materixOffset
+            idx = int(rel/336)
+            return idx
         def read(self,f):
             
             self.unk0 = f.u32()
@@ -783,8 +793,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.unk2 = f.u16()
             self.idxType = [f.u8(),f.u8(),f.u8(),f.u8()] # Index8 = 2 / Index16 = 3
             self.FaceCount = f.u16()
-            self.MatrixOffset = f.u32()
-            self.MaterialOffset = f.u32()
+            MatrixOffset = f.u32()
+            self.MatrixIndex = self.calc_materix_index(MatrixOffset)
+            MaterialOffset = f.u32()
+            self.MaterialIndex = self.calc_material_index(MaterialOffset)
             self.Position1Offset = f.u32()
             self.Position2Offset = f.u32()
             self.Normal1Offset = f.u32()
@@ -806,7 +818,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     self.Mesh.append(head)
             f.seek(self.Position1Offset)
             for x in range(self.topV):
-                self.Possition.append(f.f32_3())
+                if(self.Position2Offset):
+                    self.Possition.append(f.f32_4())
+                else:
+                    self.Possition.append(f.f32_3())
             f.seek(ret)
             
     def __init__(self):
@@ -887,12 +902,13 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             Layer.materixOffset = self.materixOffset
             Layer.read(self.f)
             self.Object_2.append(Layer)
-        for x in self.Object_0:
-            if(x.ObjectType == 4):
-                self.wgtTbl.VertBuffer0Offset = x.Buffer1Offset
-        if(self.header.WeightTableCount):
-            self.f.seek(self.header.WeightTableOffset)
-            self.wgtTbl.read(self.f)
+        if(not self.header.Endian):
+            for x in self.Object_0:
+                if(x.ObjectType == 4):
+                    self.wgtTbl.VertBuffer0Offset = x.Buffer1Offset
+            if(self.header.WeightTableCount):
+                self.f.seek(self.header.WeightTableOffset)
+                self.wgtTbl.read(self.f)
     def calcObj(self,x,head):
         x.materixOffset = self.materixOffset
         x.materialOffset = self.materialOffset
