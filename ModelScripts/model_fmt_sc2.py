@@ -738,12 +738,15 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             
     class LayerObjectEntryGC(object):
         class PolyHead(object):
-            def __init__(self,StrideArr):
+            def __init__(self,StrideArr,type):
                 self.Type = 0x90
                 self.StrideArr = StrideArr
+                self.FaceType = type
                 self.IdxArr = []
                 self.large = [0,0,0,0]
             def read(self,f):
+                if(self.FaceType == 2):
+                    f.u8()
                 self.Type = f.u8()
                 idxSize = f.u16()
                 for x in range(idxSize):
@@ -756,9 +759,11 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                         if(self.large[y] < idx[y]):
                             self.large[y] = idx[y]
                     self.IdxArr.append(idx)
-                return (idxSize > 0)
+                return idxSize
         def __init__(self):
+            self.MeshType = 0
             self.unk0 = 0
+            self.unk00 = 0
             self.unk1 = 0
             self.unk2 = 0
             self.idxType = [2,2,2,2] # Index8 = 2 / Index16 = 3
@@ -787,8 +792,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             idx = int(rel/336)
             return idx
         def read(self,f):
-            
-            self.unk0 = f.u32()
+            self.MeshType = f.u8()
+            print(self.MeshType)
+            self.unk0 = f.u16()
+            self.unk00 = f.u8()
             self.unk1 = f.u32()
             self.unk2 = f.u16()
             self.idxType = [f.u8(),f.u8(),f.u8(),f.u8()] # Index8 = 2 / Index16 = 3
@@ -807,10 +814,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoundingOffset = f.u32()
             ret = f.tell()
             f.seek(self.FaceOffset)
-            toContinue = True
+            toContinue = self.FaceCount
             self.topV = 0
             while(toContinue):
-                head = self.PolyHead(self.idxType)
+                head = self.PolyHead(self.idxType,self.MeshType)
                 toContinue = head.read(f)
                 if(toContinue):
                     if(self.topV < head.large[0]):
