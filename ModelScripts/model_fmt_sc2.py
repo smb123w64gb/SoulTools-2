@@ -520,6 +520,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             def read(self,f):
                 self.RGBA = f.u8_4()
                 self.UV = f.f32_2()
+            def write(self,f):
+                f.u8_4(self.RGBA)
+                f.f32_2(self.UV)
         class BufferScaleVertex(object):
             def __init__(self):
                 self.Position = [0.0] * 3
@@ -531,6 +534,11 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.PositionScale = f.f32()
                 self.Normal = f.f32_3()
                 self.NormalScale = f.f32()
+            def write(self,f):
+                f.f32_3(self.Position)
+                f.f32(self.PositionScale)
+                f.f32_3(self.Normal)
+                f.f32(self.NormalScale)
         class WeightDef(object):
             def __init__(self):
                 self.Pos = [0.0]*3
@@ -576,7 +584,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.VertBuffer2Offset = f.u32()
             sizeOfColor = (totalVertCount * 0xC) +(0x10 - ((totalVertCount * 0xC) % 0x10))
             self.VertBuffer0Offset = self.VertBuffer1Offset - sizeOfColor
-            f.seek(self.WeightBufferOffset)
+            print(hex(self.VertBuffer0Offset))
             high = 1
             for x in range(self.VertCounts[0]):
                 arr = []
@@ -1177,6 +1185,19 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.write(b'\x00'*320)
         for x in self.materials:
             x.write(f)
+        for x in self.wgtTbl.VertexBuff0:
+            x.write(f)
+        alighnment = f.tell() % 0x10
+        if(alighnment):
+            for y in range(0x10-alighnment):
+                f.u8(0)
+        for x in self.wgtTbl.VertexBuff1:
+            x.write(f)
+        for x in self.wgtTbl.VertexBuff2:
+            x.write(f)
+        for x in self.wgtTbl.WeightBuffer:
+            x.write(f)
+
         for x in self.Object_0:
             for y in x.StaticVerts:
                 y.write(f)
