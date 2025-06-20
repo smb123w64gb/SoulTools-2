@@ -74,7 +74,7 @@ for x in mdl.Object_0:
     currentObj+=1
     nextHi = len(x.Possition)
     for z in x.Possition:
-        y = z
+        y = applyTransform(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
         obj.write(str("v %f %f %f\n" % (y[0],y[1],y[2])))
 
     
