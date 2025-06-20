@@ -667,15 +667,16 @@ RasterizationState State;
 u16 IndexCount;
 GCPoly Polys [IndexCount];
 };
+#include "std/mem.pat"
 
 struct layerObjectEntryGC{
     CPArray Unk0; // These unk are consistent with skinned/static meshes
     UVAT_group0 test;
-    CPArray Unk5;
-    CPArray Unk6;
-    CPArray Unk7;
-    CPArray Unk8;
-    CPArray Unk9;
+    u8 Unk5;
+    u8 Unk6;
+    u8 Unk7;
+    u8 Unk8;
+    u8 Unk9;
     VertexComponentFormat IndiceType1;
     VertexComponentFormat IndiceType2;
     VertexComponentFormat IndiceType3;
@@ -695,7 +696,11 @@ struct layerObjectEntryGC{
     u32 TexCoordOffset;
     u32 FaceOffset;
     u32 BoundingOffset;
-    GCIndc faceArray[1] @ FaceOffset;
+    u32 BufferAlloc = FaceCount*32;
+    u32 endAddress = FaceOffset + BufferAlloc;
+    std::mem::Section mySection = std::mem::create_section("GC Indexes");
+    //GCIndc polys[while(std::mem::reached(endAddress) == false)] @ FaceOffset;
+    u8 faceAlloc[BufferAlloc] @ FaceOffset;
     if(Position1Offset > 0)
         float test1 @ Position1Offset;
     if(Position2Offset > 0)

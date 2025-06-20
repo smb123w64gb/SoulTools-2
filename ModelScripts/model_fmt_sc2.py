@@ -128,6 +128,16 @@ class FRead(object): #Generic file reader
         return struct.unpack(self.endian+'b', self.file.read(1))[0]
     def f16(self):
         return struct.unpack(self.endian+'e', self.file.read(2))[0]
+    def g16(self):
+        val = struct.unpack(self.endian+'h', self.file.read(2))[0]
+        val = float(val)/8192.0
+        return val
+    def g16_2(self):
+        val = [self.g16(),self.g16()]
+        return val
+    def g16_3(self):
+        val = [self.g16(),self.g16(),self.g16()]
+        return val
     def f32(self):
         return struct.unpack(self.endian+'f', self.file.read(4))[0]
     def f32_4(self):
@@ -566,7 +576,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.VertBuffer2Offset = f.u32()
             sizeOfColor = (totalVertCount * 0xC) +(0x10 - ((totalVertCount * 0xC) % 0x10))
             self.VertBuffer0Offset = self.VertBuffer1Offset - sizeOfColor
-            print(hex(self.VertBuffer0Offset))
             f.seek(self.WeightBufferOffset)
             high = 1
             for x in range(self.VertCounts[0]):
@@ -745,21 +754,28 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.IdxArr = []
                 self.large = [0,0,0,0]
             def read(self,f):
+                sizeValue = 1
                 if(self.FaceType == 2):
                     f.u8()
+                    sizeValue+=1
                 self.Type = f.u8()
-                idxSize = f.u16()
-                for x in range(idxSize):
-                    idx = []
-                    for y in range(4):
-                        if(self.StrideArr[y] == 2):
-                            idx.append(f.u8())
-                        elif(self.StrideArr[y] == 3):
-                            idx.append(f.u16())
-                        if(self.large[y] < idx[y]):
-                            self.large[y] = idx[y]
-                    self.IdxArr.append(idx)
-                return idxSize
+                if(self.Type > 0):
+                    sizeValue += 2
+                    idxSize = f.u16()
+                    
+                    for x in range(idxSize):
+                        idx = []
+                        for y in range(4):
+                            if(self.StrideArr[y] == 2):
+                                sizeValue +=1
+                                idx.append(f.u8())
+                            elif(self.StrideArr[y] == 3):
+                                sizeValue += 2
+                                idx.append(f.u16())
+                            if(self.large[y] < idx[y]):
+                                self.large[y] = idx[y]+1
+                        self.IdxArr.append(idx)
+                return sizeValue
         def __init__(self):
             self.MeshType = 0
             self.unk0 = 0
@@ -783,6 +799,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Mesh = []
             self.topV = 0
             self.Possition = []
+            self.Normal = []
+            self.Color = []
+            self.TexCords = []
         def calc_material_index(self,offset):
             rel = offset - self.materialOffset
             idx = int(rel/0x50)
@@ -793,7 +812,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             return idx
         def read(self,f):
             self.MeshType = f.u8()
-            print(self.MeshType)
             self.unk0 = f.u16()
             self.unk00 = f.u8()
             self.unk1 = f.u32()
@@ -814,22 +832,47 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoundingOffset = f.u32()
             ret = f.tell()
             f.seek(self.FaceOffset)
-            toContinue = self.FaceCount
+            toContinue = self.FaceCount * 32
             self.topV = 0
-            while(toContinue):
+            topN = 0 
+            topC = 0
+            topT = 0
+            while(toContinue>0):
                 head = self.PolyHead(self.idxType,self.MeshType)
-                toContinue = head.read(f)
-                if(toContinue):
+                size = head.read(f)
+                if(size>1):
+                    toContinue -= size
                     if(self.topV < head.large[0]):
                         self.topV = head.large[0]
+                    if(topN < head.large[1]):
+                        topN = head.large[1]
+                    if(topC < head.large[2]):
+                        topC = head.large[2]
+                    if(topT < head.large[3]):
+                        topT = head.large[3]
                     self.Mesh.append(head)
+                else:
+                    toContinue = 0
             f.seek(self.Position1Offset)
             for x in range(self.topV):
                 if(self.Position2Offset):
                     self.Possition.append(f.f32_4())
                 else:
                     self.Possition.append(f.f32_3())
+            f.seek(self.Normal1Offset)
+            for x in range(topN):
+                if(self.Normal2Offset):
+                    self.Normal.append(f.f32_4())
+                else:
+                    self.Normal.append(f.g16_3())
+            f.seek(self.ColorOffset)
+            for x in range(topC):
+                self.Color.append(f.u8_4())
+            f.seek(self.TexCoordOffset)
+            for x in range(topT):
+                self.TexCords.append(f.g16_2())
             f.seek(ret)
+
             
     def __init__(self):
         self.f = None
@@ -981,7 +1024,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.unkMtx.Offset = head
         self.materialOffset = head
         self.header.MaterialsInfo['offset'] = head
-        print(len(self.materials))
         self.header.MaterialsInfo['count'] = len(self.materials)
         head += len(self.materials) * 80
         if(self.header.WeightTableCount):

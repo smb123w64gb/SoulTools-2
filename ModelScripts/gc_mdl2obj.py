@@ -34,10 +34,9 @@ obj = open(sys.argv[1] + ".obj", "w")
 
 
 
-print(str(mdl.header))
 totalRigged = 0
 currentObj = 0
-currentVertH = 1
+
 
 def triangle_strip_to_list(tri_data):
     #assume tristrip
@@ -66,34 +65,58 @@ def applyTransform(vertex,bone_idx,bonez):
     loc = transforms
     return (loc[0],loc[1],loc[2])
 
-
+currentVertHv = 1
+currentVertHn = 1
+currentVertHt = 1
 for x in mdl.Object_0:
-    polygons = []
-    nextHi = 0
+    polygonsv = []
+    polygonsn = []
+    polygonst = []
     obj.write(str("o Obj_%02i\n" % currentObj))
     currentObj+=1
-    nextHi = len(x.Possition)
+    nextHiv = len(x.Possition)
+    nextHin = len(x.Normal)
+    nextHit = len(x.TexCords)
     for z in x.Possition:
         y = applyTransform(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
         obj.write(str("v %f %f %f\n" % (y[0],y[1],y[2])))
+    for y in x.Normal:
+        obj.write(str("vn %f %f %f\n" % (y[0],y[1],y[2])))
+    for y in x.TexCords:
+        obj.write(str("vt %f %f\n" % (y[0],y[1])))
 
     
     for z in x.Mesh:
         posTri = []
+        norTri = []
+        texTri = []
         for y in z.IdxArr:
             posTri.append(y[0])
-            #polygons.extend(triangle_strip_to_list(y[0]))
-        polygons.append(triangle_strip_to_list(posTri))
+        for y in z.IdxArr:
+            norTri.append(y[1])
+        for y in z.IdxArr:
+            texTri.append(y[3])
+        polygonsv.append(triangle_strip_to_list(posTri))
+        polygonsn.append(triangle_strip_to_list(norTri))
+        polygonst.append(triangle_strip_to_list(texTri))
+    flatPie = []
+    for x in range(len(polygonsv)):
+        v = polygonsv[x]
+        n = polygonsn[x]
+        t = polygonst[x]
+        if(len(v)):
+            for y in range(len(v)):
+                for z in range(3):
+                    flatPie.append((v[y][z],n[y][z],t[y][z]))
     msh_idx = 0
-    for pp in polygons:
-        
-        for ppp in pp:
-            for p in ppp:
-                if(msh_idx == 0):
-                    obj.write("f")
-                obj.write(str(" %i" % (p+currentVertH)))
-                msh_idx += 1
-                if(msh_idx == 3):
-                    obj.write("\n")
-                    msh_idx = 0
-    currentVertH += nextHi
+    for pp in flatPie:
+        if(msh_idx == 0):
+            obj.write("f")
+        obj.write(str(" %i/%i/%i" % ((pp[0]+currentVertHv),(pp[1]+currentVertHn),(pp[2]+currentVertHt))))
+        msh_idx += 1
+        if(msh_idx == 3):
+            obj.write("\n")
+            msh_idx = 0
+    currentVertHv += nextHiv
+    currentVertHn += nextHin
+    currentVertHt += nextHit
