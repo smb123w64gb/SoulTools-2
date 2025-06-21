@@ -363,7 +363,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.TextureIdx0 = 0
             self.TextureIdx1 = None
             self.TextureIdx2 = None
-            self.TextureMap0 = self.MaterialMap()
+            self.TextureMap0 = None
             self.TextureMap1 = None
             self.TextureMap2 = None
             self.AmbientRGBA = [0.0]*4
@@ -386,6 +386,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.TextureIdx2 = self.calc_texture_index(f.u32())
             map0 = f.u32()
             if(map0>0):
+                self.TextureMap0 = self.MaterialMap()
                 ret = f.tell()
                 f.seek(map0)
                 self.TextureMap0.read(f)
@@ -413,7 +414,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.u8(self.unk2)
             f.u8(self.CullMode)
             f.u32(self.OpacitySrc)
-            f.u32(self.textureOffset + (self.TextureIdx0*0x24))
+            if self.TextureIdx0 is  None:
+                f.u32(0)
+            else:
+                f.u32(self.textureOffset + (self.TextureIdx0*0x24))
 
             if self.TextureIdx1 is  None:
                 f.u32(0)
@@ -424,8 +428,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 f.u32(0)
             else:
                 f.u32(self.textureOffset   + (self.TextureIdx2*0x24))
-            
-            f.u32(self.TextureMap0.offset)
+            if self.TextureMap0 is  None:
+                f.u32(0)
+            else:
+                f.u32(self.TextureMap0.offset)
 
             if self.TextureMap1 is  None:
                 f.u32(0)
@@ -556,7 +562,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             def as_bytes(self):
                 return struct.pack('fffffffBBH',self.Pos[0],self.Pos[1],self.Pos[2],self.bWgt,self.Nor[0],self.Nor[1],self.Nor[2],self.bIdx,self.stat,0)
             def write(self,f):
-                f.write(self.as_bytes)
+                f.f32_3(self.Pos)
+                f.f32(self.bWgt)
+                f.f32_3(self.Nor)
+                f.u8(self.bIdx)
+                f.u8(self.stat)
+                f.u16(0)
             
         def __init__(self):
             self.VertCounts = [0]*4
@@ -584,7 +595,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.VertBuffer2Offset = f.u32()
             sizeOfColor = (totalVertCount * 0xC) +(0x10 - ((totalVertCount * 0xC) % 0x10))
             self.VertBuffer0Offset = self.VertBuffer1Offset - sizeOfColor
-            print(hex(self.VertBuffer0Offset))
+            f.seek(self.WeightBufferOffset)
             high = 1
             for x in range(self.VertCounts[0]):
                 arr = []
@@ -637,6 +648,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 a = self.BufferColorUV()
                 a.read(f)
                 self.VertexBuff0.append(a)
+        def write(self,f):
+            for x in self.VertCounts:
+                f.u32(x)
+            f.u32(self.WeightBufferOffset )
+            f.u32(self.VertBuffer1Offset)
+            f.u32(self.VertBuffer2Offset)
                 
     
     class LayerObjectEntryXbox(object):
@@ -1002,9 +1019,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.header.TextureMapOffset = head
         
         for x in self.materials:
-            x.TextureMap0.size = 4*len(x.TextureMap0.value)+4
-            x.TextureMap0.offset = head
-            head += x.TextureMap0.size
+            if x.TextureMap0 is not None:
+                x.TextureMap0.size = 4*len(x.TextureMap0.value)+4
+                x.TextureMap0.offset = head
+                head += x.TextureMap0.size
             if x.TextureMap1 is not None:
                  x.TextureMap1.size = 4*len(x.TextureMap1.value)+4
                  x.TextureMap1.offset = head
@@ -1053,6 +1071,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     x.Buffer1Offset = self.wgtTbl.VertBuffer0Offset
                     x.Buffer2Offset = self.wgtTbl.VertBuffer1Offset
                     x.Buffer3Offset = self.wgtTbl.VertBuffer2Offset
+                    print(hex(head))
                     if(head % 0x10):
                         head += 0x10 - (head % 0x10)
                     x.FaceOffset = head
@@ -1079,22 +1098,22 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     x.FaceCount = len(x.Mesh)
                     head += len(x.Mesh)*2
 
+        if(head % 0x10):
+            head += 0x10 - (head % 0x10)
+        
         for x in self.Object_0:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
-            if(x.ObjectType == 4):
-                pass
-            else:
+            if(x.ObjectType == 0):
                 x.Buffer1Offset = head
+                x.Buffer4Offset = head
                 head += len(x.StaticVerts) * 40
-            if(head % 0x10):
-                head += 0x10 - (head % 0x10)
-            x.CenterRadiusOffset = head
-            head += 0x10
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
+                x.CenterRadiusOffset = head
+                head += 0x10
         for x in self.Object_0:
-            if(x.ObjectType == 4):
-                pass
-            else:
+            if(x.ObjectType == 0):
                 if(head % 0x10):
                     head += 0x10 - (head % 0x10)
                 x.FaceOffset = head
@@ -1103,19 +1122,16 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         for x in self.Object_1:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
-            if(x.ObjectType == 4):
-                pass
-            else:
+            if(x.ObjectType == 0):
                 x.Buffer1Offset = head
+                x.Buffer4Offset = head
                 head += len(x.StaticVerts) * 40
-            if(head % 0x10):
-                head += 0x10 - (head % 0x10)
-            x.CenterRadiusOffset = head
-            head += 0x10
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
+                x.CenterRadiusOffset = head
+                head += 0x10
         for x in self.Object_1:
-            if(x.ObjectType == 4):
-                pass
-            else:
+            if(x.ObjectType == 0):
                 if(head % 0x10):
                     head += 0x10 - (head % 0x10)
                 x.FaceOffset = head
@@ -1124,19 +1140,16 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         for x in self.Object_2:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
-            if(x.ObjectType == 4):
-                pass
-            else:
+            if(x.ObjectType == 0):
                 x.Buffer1Offset = head
+                x.Buffer4Offset = head
                 head += len(x.StaticVerts) * 40
-            if(head % 0x10):
-                head += 0x10 - (head % 0x10)
-            x.CenterRadiusOffset = head
-            head += 0x10
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
+                x.CenterRadiusOffset = head
+                head += 0x10
         for x in self.Object_2:
-            if(x.ObjectType == 4):
-                pass
-            else:
+            if(x.ObjectType == 0):
                 if(head % 0x10):
                     head += 0x10 - (head % 0x10)
                 x.FaceOffset = head
@@ -1169,12 +1182,14 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         for x in self.Object_0:
             x.write(f)
         for x in self.materials:
-            x.TextureMap0.write(f)
+            if x.TextureMap0 is not None:
+                x.TextureMap0.write(f)
             if x.TextureMap1 is not None:
                  x.TextureMap1.write(f)
             if x.TextureMap2 is not None:
                  x.TextureMap2.write(f)
         f.write(b'\xFF\xFF\xFF\xFF')
+        self.wgtTbl.write(f)
         self.unkMtx.write(f)
         alighnment = f.tell() % 0x10
         if(alighnment):
@@ -1193,26 +1208,43 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 f.u8(0)
         for x in self.wgtTbl.VertexBuff1:
             x.write(f)
+        f.write(b'\x00'*0x400)
         for x in self.wgtTbl.VertexBuff2:
             x.write(f)
+        f.write(b'\x00'*0x400)
         for x in self.wgtTbl.WeightBuffer:
-            x.write(f)
-
-        for x in self.Object_0:
-            for y in x.StaticVerts:
+            for y in x:
                 y.write(f)
-            alighnment = f.tell() % 0x10
-            if(alighnment):
-                for y in range(0x10-alighnment):
-                    f.u8(0)
-            f.f32_4(x.CenterRadius)
+        f.write(b'\xFF'*0x10)
         for x in self.Object_0:
-            alighnment = f.tell() % 0x10
-            if(alighnment):
-                for y in range(0x10-alighnment):
-                    f.u8(0)
-            for y in x.Mesh:
-                f.u16(y)
+            if x.ObjectType == 0x4:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                for y in x.Mesh:
+                    f.u16(y)
+        alighnment = f.tell() % 0x10
+        if(alighnment):
+            for y in range(0x10-alighnment):
+                f.u8(0)
+        for x in self.Object_0:
+            if x.ObjectType == 0:
+                for y in x.StaticVerts:
+                    y.write(f)
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                f.f32_4(x.CenterRadius)
+        for x in self.Object_0:
+            if x.ObjectType == 0:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                for y in x.Mesh:
+                    f.u16(y)
         for x in self.boneInfo:
             x.write(f)
         alighnment = f.tell() % 0x100

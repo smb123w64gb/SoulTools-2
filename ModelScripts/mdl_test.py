@@ -10,6 +10,13 @@ mdl.read(mdl_file)
 mdl_file.close()
 
 #print(mdl.Object_0[0].Possition)
+
+mdl_file = open(sys.argv[2], "wb")
+
+mdl.Object_0 = mdl.Object_0[:9]
+
+mdl.write(mdl_file)
+mdl_file.close()
 curtop = 1
 
 def triangle_strip_to_list(tri_data):
