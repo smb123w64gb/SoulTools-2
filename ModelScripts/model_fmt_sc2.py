@@ -1181,6 +1181,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.header.write(f)
         for x in self.Object_0:
             x.write(f)
+        for x in self.Object_1:
+            x.write(f)
+        for x in self.Object_2:
+            x.write(f)
         for x in self.materials:
             if x.TextureMap0 is not None:
                 x.TextureMap0.write(f)
@@ -1224,6 +1228,22 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                         f.u8(0)
                 for y in x.Mesh:
                     f.u16(y)
+        for x in self.Object_1:
+            if x.ObjectType == 0x4:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                for y in x.Mesh:
+                    f.u16(y)
+        for x in self.Object_2:
+            if x.ObjectType == 0x4:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                for y in x.Mesh:
+                    f.u16(y)
         alighnment = f.tell() % 0x10
         if(alighnment):
             for y in range(0x10-alighnment):
@@ -1237,7 +1257,41 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     for y in range(0x10-alighnment):
                         f.u8(0)
                 f.f32_4(x.CenterRadius)
+        for x in self.Object_1:
+            if x.ObjectType == 0:
+                for y in x.StaticVerts:
+                    y.write(f)
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                f.f32_4(x.CenterRadius)
+        for x in self.Object_2:
+            if x.ObjectType == 0:
+                for y in x.StaticVerts:
+                    y.write(f)
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                f.f32_4(x.CenterRadius)
         for x in self.Object_0:
+            if x.ObjectType == 0:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                for y in x.Mesh:
+                    f.u16(y)
+        for x in self.Object_1:
+            if x.ObjectType == 0:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
+                for y in x.Mesh:
+                    f.u16(y)
+        for x in self.Object_2:
             if x.ObjectType == 0:
                 alighnment = f.tell() % 0x10
                 if(alighnment):
