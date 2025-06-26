@@ -11,18 +11,16 @@ host.close()
 
 slave = open(sys.argv[2], "rb")
 
-mdl_s = model_fmt_sc2.VM()
+ps2 = model_fmt_sc2.FRead(slave)
+ps2.seek(10)
+bonecount = ps2.u16()
+ps2.seek(0x10)
+boneoffset = ps2.u32()
 
-mdl_s.read(slave)
+
 slave.close()
 
 mdl.boneInfo = copy.deepcopy(mdl_s.boneInfo)
-
-bonemax = len(mdl.boneInfo)-1
-for x in mdl.wgtTbl.WeightBuffer:
-    for y in x:
-        if(y.bIdx > bonemax):
-            y.bIdx = bonemax
 
 output = open(sys.argv[3], "wb")
 mdl.write(output)
