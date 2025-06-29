@@ -1,5 +1,5 @@
 import struct
-from enum import Flag, auto, Enum
+from enum import Enum
 class D3DFORMAT(Enum):
     D3DFMT_L8 = 0x00
     D3DFMT_AL8 = 0x01
@@ -258,8 +258,8 @@ class VTX(object):
             if x.pallet is not None:
                 x.pallet.PaletteOffset = Head
                 Head += 0x400
-        if(Head % 0x40):#Also alignment
-            Head += 0x40 - (Head % 0x40)
+        if(Head % 0x100):#Also alignment
+            Head += 0x100 - (Head % 0x100)
         #Third, Now for Texel Data
         for x in self.textures:
             x.DataOffset = Head
@@ -279,9 +279,9 @@ class VTX(object):
         for x in self.textures:
             if x.pallet is not None:
                 x.pallet.writeData(f)
-        misAlignment =  f.tell() % 0x40
+        misAlignment =  f.tell() % 0x100
         if(misAlignment):
-            for x in range(0x40 - misAlignment):
+            for x in range(0x100 - misAlignment):
                 w8(f,0)#Seeking wont write null so we do it
         for x in self.textures:
             f.write(x.Data)

@@ -20,12 +20,18 @@ struct Header{
     u16 Object1Count;
     u16 BoneCount;
     u32 Unk0C;
+    padding[16];
     u32 BoneOffset;
-    u32 Unk10;
+    u32 tex_file_addr;
     u32 Object1Offset;
-    u32 Unk18;
-    u32 Unk1C;
+    u32 table5_addr;
+    u32 table4_addr;
     u32 BoneHeaderOffset;
+    u32 unk016;
+    u32 table1_addr;
+    u32 table2_addr;
+    u32 table3_addr;
+    u32 table6_addr;
 };
 struct boneInfo { // bone positions relative to its parent
     tVector4f EndPositionXYZScale;
@@ -41,9 +47,18 @@ struct boneInfo { // bone positions relative to its parent
     char Name[] @ BoneNameOffset;
     //}
 }[[name(std::format("{}", Name))]];
-
+struct objectLayer{
+    u8 type;
+    u8 count;
+    u8 unk0;
+    u8 unk1;
+    match(type){
+    
+    }
+};
 struct VMP{
 Header HDR;
+u32 ObjectOffset[HDR.Object1Count];
 boneInfo Bones[HDR.BoneCount] @ HDR.BoneOffset;
 };
 

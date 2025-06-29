@@ -1119,6 +1119,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 x.FaceOffset = head
                 x.FaceCount = len(x.Mesh)
                 head += len(x.Mesh)*2
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
         for x in self.Object_1:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
@@ -1137,6 +1139,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 x.FaceOffset = head
                 x.FaceCount = len(x.Mesh)
                 head += len(x.Mesh)*2
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
         for x in self.Object_2:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
@@ -1155,6 +1159,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 x.FaceOffset = head
                 x.FaceCount = len(x.Mesh)
                 head += len(x.Mesh)*2
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
 
 
         self.header.BoneInfo['offset'] = head
@@ -1168,6 +1174,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         for x in self.materials:
             x.textureOffset = head+0x14
         head += len(self.texture)
+        if(head % 0x10):
+            head += 0x10 - (head % 0x10)
         self.header.BoneHeaderOffset = head
         head += 40
         self.header.BoneNameOffset = head
@@ -1193,7 +1201,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             if x.TextureMap2 is not None:
                  x.TextureMap2.write(f)
         f.write(b'\xFF\xFF\xFF\xFF')
-        self.wgtTbl.write(f)
+        if(self.header.WeightTableCount > 0):
+            self.wgtTbl.write(f)
         self.unkMtx.write(f)
         alighnment = f.tell() % 0x10
         if(alighnment):
@@ -1204,50 +1213,51 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.write(b'\x00'*320)
         for x in self.materials:
             x.write(f)
-        for x in self.wgtTbl.VertexBuff0:
-            x.write(f)
-        alighnment = f.tell() % 0x10
-        if(alighnment):
-            for y in range(0x10-alighnment):
-                f.u8(0)
-        for x in self.wgtTbl.VertexBuff1:
-            x.write(f)
-        f.write(b'\x00'*0x400)
-        for x in self.wgtTbl.VertexBuff2:
-            x.write(f)
-        f.write(b'\x00'*0x400)
-        for x in self.wgtTbl.WeightBuffer:
-            for y in x:
-                y.write(f)
-        f.write(b'\xFF'*0x10)
-        for x in self.Object_0:
-            if x.ObjectType == 0x4:
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
-                for y in x.Mesh:
-                    f.u16(y)
-        for x in self.Object_1:
-            if x.ObjectType == 0x4:
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
-                for y in x.Mesh:
-                    f.u16(y)
-        for x in self.Object_2:
-            if x.ObjectType == 0x4:
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
-                for y in x.Mesh:
-                    f.u16(y)
-        alighnment = f.tell() % 0x10
-        if(alighnment):
-            for y in range(0x10-alighnment):
-                f.u8(0)
+        if(self.header.WeightTableCount > 0):
+            for x in self.wgtTbl.VertexBuff0:
+                x.write(f)
+            alighnment = f.tell() % 0x10
+            if(alighnment):
+                for y in range(0x10-alighnment):
+                    f.u8(0)
+            for x in self.wgtTbl.VertexBuff1:
+                x.write(f)
+            f.write(b'\x00'*0x400)
+            for x in self.wgtTbl.VertexBuff2:
+                x.write(f)
+            f.write(b'\x00'*0x400)
+            for x in self.wgtTbl.WeightBuffer:
+                for y in x:
+                    y.write(f)
+            f.write(b'\xFF'*0x10)
+            for x in self.Object_0:
+                if x.ObjectType == 0x4:
+                    alighnment = f.tell() % 0x10
+                    if(alighnment):
+                        for y in range(0x10-alighnment):
+                            f.u8(0)
+                    for y in x.Mesh:
+                        f.u16(y)
+            for x in self.Object_1:
+                if x.ObjectType == 0x4:
+                    alighnment = f.tell() % 0x10
+                    if(alighnment):
+                        for y in range(0x10-alighnment):
+                            f.u8(0)
+                    for y in x.Mesh:
+                        f.u16(y)
+            for x in self.Object_2:
+                if x.ObjectType == 0x4:
+                    alighnment = f.tell() % 0x10
+                    if(alighnment):
+                        for y in range(0x10-alighnment):
+                            f.u8(0)
+                    for y in x.Mesh:
+                        f.u16(y)
+            alighnment = f.tell() % 0x10
+            if(alighnment):
+                for y in range(0x10-alighnment):
+                    f.u8(0)
         for x in self.Object_0:
             if x.ObjectType == 0:
                 for y in x.StaticVerts:
@@ -1283,6 +1293,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                         f.u8(0)
                 for y in x.Mesh:
                     f.u16(y)
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
         for x in self.Object_1:
             if x.ObjectType == 0:
                 alighnment = f.tell() % 0x10
@@ -1291,6 +1305,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                         f.u8(0)
                 for y in x.Mesh:
                     f.u16(y)
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
         for x in self.Object_2:
             if x.ObjectType == 0:
                 alighnment = f.tell() % 0x10
@@ -1299,6 +1317,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                         f.u8(0)
                 for y in x.Mesh:
                     f.u16(y)
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
         for x in self.boneInfo:
             x.write(f)
         alighnment = f.tell() % 0x100
@@ -1306,6 +1328,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             for y in range(0x100-alighnment):
                 f.u8(0)
         f.write(self.texture)
+        alighnment = f.tell() % 0x10
+        if(alighnment):
+            for y in range(0x10-alighnment):
+                f.u8(0)
         f.write(self.unkArray)
         for x in self.boneInfo:
             f.write(x.Name.encode())
