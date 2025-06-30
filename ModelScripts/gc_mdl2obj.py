@@ -51,7 +51,6 @@ def triangle_strip_to_list(tri_data):
 def applyTransform(vertex,bone_idx,bonez):
     next_bone = bone_idx
     transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
-    chain = []
     while(next_bone != 255):
         bon = bonez[next_bone]
         d = euler_to_degrees(bon.Rotation[0],bon.Rotation[1],bon.Rotation[2])
@@ -60,7 +59,18 @@ def applyTransform(vertex,bone_idx,bonez):
         transforms.rotate(r)
         tra = mathutils.Vector((bon.StartPositionXYZScale[0],bon.StartPositionXYZScale[1],bon.StartPositionXYZScale[2]))
         transforms = transforms + tra
-        chain.append(next_bone)
+        next_bone = bon.BoneParentIdx
+    loc = transforms
+    return (loc[0],loc[1],loc[2])
+def applyTransform_norm(vertex,bone_idx,bonez):
+    next_bone = bone_idx
+    transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
+    while(next_bone != 255):
+        bon = bonez[next_bone]
+        d = euler_to_degrees(bon.Rotation[0],bon.Rotation[1],bon.Rotation[2])
+        e = degrees_to_radians(d[0],d[1],d[2])
+        r = mathutils.Euler((e[0],e[1],e[2]))
+        transforms.rotate(r)
         next_bone = bon.BoneParentIdx
     loc = transforms
     return (loc[0],loc[1],loc[2])
@@ -74,15 +84,16 @@ for x in mdl.Object_0:
     polygonst = []
     obj.write(str("o Obj_%02i\n" % currentObj))
     currentObj+=1
-    nextHiv = len(x.Possition)
-    nextHin = len(x.Normal)
-    nextHit = len(x.TexCords)
-    for z in x.Possition:
+    nextHiv = len(x.PositionStorage.values)
+    nextHin = len(x.NormalStorage.values)
+    nextHit = len(x.UVStorage.values)
+    for z in x.PositionStorage.values:
         y = applyTransform(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
         obj.write(str("v %f %f %f\n" % (y[0],y[1],y[2])))
-    for y in x.Normal:
+    for z in x.NormalStorage.values:
+        y = applyTransform_norm(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
         obj.write(str("vn %f %f %f\n" % (y[0],y[1],y[2])))
-    for y in x.TexCords:
+    for y in x.UVStorage.values:
         obj.write(str("vt %f %f\n" % (y[0],y[1])))
 
     
@@ -107,16 +118,16 @@ for x in mdl.Object_0:
         if(len(v)):
             for y in range(len(v)):
                 for z in range(3):
-                    flatPie.append((v[y][z],n[y][z],t[y][z]))
+                    flatPie.append((v[y][z],t[y][z],n[y][z]))
     msh_idx = 0
     for pp in flatPie:
         if(msh_idx == 0):
             obj.write("f")
-        obj.write(str(" %i/%i/%i" % ((pp[0]+currentVertHv),(pp[1]+currentVertHn),(pp[2]+currentVertHt))))
+        obj.write(str(" %i/%i/" % ((pp[0]+currentVertHv),(pp[1]+currentVertHt))))
         msh_idx += 1
         if(msh_idx == 3):
             obj.write("\n")
             msh_idx = 0
     currentVertHv += nextHiv
-    currentVertHn += nextHin
+    #currentVertHn += nextHin
     currentVertHt += nextHit

@@ -671,12 +671,18 @@ GCPoly Polys [IndexCount];
 
 struct layerObjectEntryGC{
     CPArray Unk0; // These unk are consistent with skinned/static meshes
-    UVAT_group0 test;
-    u8 Unk5;
-    u8 Unk6;
-    u8 Unk7;
-    u8 Unk8;
-    u8 Unk9;
+    u8 PosStride;
+    ComponentFormat PositionFormat;
+    u8 PosScale;
+    
+    u8 NormalStride;
+    ComponentFormat NormalFormat;
+    u8 NormalScale;
+    
+    u8 UVStride;
+    ComponentFormat UVFormat;
+    u8 UVScale;
+    
     VertexComponentFormat IndiceType1;
     VertexComponentFormat IndiceType2;
     VertexComponentFormat IndiceType3;

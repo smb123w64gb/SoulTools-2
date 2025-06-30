@@ -34,10 +34,16 @@ class Model(object):
 
         self.poly = []
     def readVert(self,v):
-        self.verts.append([float(v[0]),float(v[1]),float(v[2])])
-        self.norms.append([float(v[3]),float(v[4]),float(v[5])])
-        self.color.append([int(v[6]),int(v[7]),int(v[8]),int(v[9])])
-        self.texcr.append([float(v[10]),float(v[11])])
+        if(len(v)>11):
+            self.verts.append([float(v[0]),float(v[1]),float(v[2])])
+            self.norms.append([float(v[3]),float(v[4]),float(v[5])])
+            self.color.append([int(v[6]),int(v[7]),int(v[8]),int(v[9])])
+            self.texcr.append([float(v[10]),float(v[11])])
+        else:
+            self.verts.append([float(v[0]),float(v[1]),float(v[2])])
+            self.norms.append([float(v[3]),float(v[4]),float(v[5])])
+            self.color.append([int(255),int(255),int(255),int(255)])
+            self.texcr.append([float(v[6]),float(v[7])])
     def readPoly(self,v):
         self.poly.append([int(v[1]),int(v[2]),int(v[3])])
     def toVMX(self):
@@ -83,7 +89,7 @@ for y in files:
         if(x.find('end_header')==0):
             start_read = True
     ply_mdls.append(mdl_txt)
-bone_idxes_fixup = [3,1,12,13,14,15,17,18,19,5,6,7,9,10,11]
+bone_idxes_fixup = [3,1,12,13,14,15,17,18,19,5,6,7,9,10,11,112,110]
 
 def applyTransform(vertex,bone_idx,bonez):
     next_bone = bone_idx
@@ -142,6 +148,19 @@ mdl = model_fmt_sc2.VM()
 mdl.read(mdl_file)
 mdl_file.close()
 
+#get our matrixes up
+cloned_matrix = copy.deepcopy(mdl.matrix_table[0])
+
+new_matrixes = []
+
+for x in mdl.boneInfo:
+    if(len(x.Name)>0):
+        clean = copy.copy(cloned_matrix)
+        clean.Type = 2
+        clean.ParentBoneIdx = x.BoneIdx
+        new_matrixes.append(clean)
+
+mdl.matrix_table = new_matrixes
 
 
 newmat = copy.deepcopy(mdl.materials[0])
@@ -152,6 +171,10 @@ mdl.materials[0] = newmat
 mdl.materials = mdl.materials[:1]
 
 mdl.Object_0 = []
+mdl.Object_1 = []
+mdl.Object_2 = []
+mdl.wgtTbl = mdl.WeightTable()
+mdl.header.WeightTableCount = 0
 for idx,x in enumerate(ply_mdls):
     mdl_lay = x.toVMX()
     for y in mdl_lay.StaticVerts:

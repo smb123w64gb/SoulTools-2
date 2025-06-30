@@ -19,8 +19,8 @@ format = texture_fmt_sc2.D3DFORMAT.D3DFMT_P8
 pallet = pilPal_RGBA(png.getpalette())
 data = bytearray()
 firstpass = []
-for x in range(width):
-    for y in range(height):
+for x in range(height):
+    for y in range(width):
         firstpass.append(png.getpixel((y,x)))
 png.close()
 unsizzled = swizzle.swizzle_rect(firstpass,width,height,width,1)
@@ -28,19 +28,15 @@ unsizzled = swizzle.swizzle_rect(firstpass,width,height,width,1)
 for x in unsizzled:
     data += struct.pack("B",x)
 
-
-
-#vxt_file = open(sys.argv[2], "rb")
-
 newTex = texture_fmt_sc2.VTX()
-#newTex.read(vxt_file)
-#vxt_file.close()
-
-
-
-
+try:
+    with open(sys.argv[2], "rb") as vxt_file:
+        newTex.read(vxt_file)
+        vxt_file.close()
+        
+except:
+    pass
 newTex.addTexture(width,height,data,mipcount,format,pallet)
-
 vxt_file = open(sys.argv[2], "wb")
 newTex.write(vxt_file)
 vxt_file.close()

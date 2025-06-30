@@ -31,7 +31,7 @@ static unsigned int get_swizzled_offset(
 ffi.cdef("""int get_swizzled_offset(unsigned int, unsigned int, unsigned int,
     uint32_t, uint32_t, uint32_t,
     unsigned int);""")
-ffi.compile()
+#ffi.compile()
 from _get_swizzled_offset import lib as getSwizzed
 
 ffi1 = FFI()
@@ -64,7 +64,7 @@ ffi1.set_source("_generate_swizzle_masks", """
 ffi1.cdef("""int *  generate_swizzle_masks(unsigned int, unsigned int, unsigned int);
             void free(void *);""")
 
-ffi1.compile()
+#ffi1.compile()
 from _generate_swizzle_masks import lib as generateSwizz
 def c_generate_swizzle_masks(width,height,depth):
     ret = generateSwizz.generate_swizzle_masks(width,height,depth)
