@@ -41,6 +41,40 @@ enum DmaTagType : u64
     /** Transfers the QWC qword following the tag, clears the Dn_CHCR.STR to 0, and ends transfer. */
     P2_DMA_TAG_END = 7
 };
+enum psm_types : u32{
+GS_TEX_32 =          0,
+GS_TEX_24 =          1,
+GS_TEX_16 =          2,
+GS_TEX_16S =        10,
+GS_TEX_8 =         19,
+GS_TEX_4 =         20,
+GS_TEX_8H =         27,
+GS_TEX_4HL =        36,
+GS_TEX_4HH =        44
+};
+enum GsTexFunctions : u32{
+    GS_TEX_MODULATE     =0,    /** brighten texture based on Pixel's Alpha */
+    GS_TEX_DECAL,           /** keep texture as is */
+    GS_TEX_HIGHLIHGT1,      /** used when highlighting translucent polygons */
+    GS_TEX_HIGHLIHGT2       /** used when highlighting opaque polygons */
+};
+
+bitfield GS_TEX0 {
+    tb_addr     :14;
+    tb_width        :6;
+    psm_types psm     :6;
+    tex_width       :4;
+    tex_height  :4;
+    tex_cc      :1;
+    GsTexFunctions tex_funtion :2;
+    cb_addr     :14;
+    clut_pixmode    :4;
+    clut_smode  :1;
+    clut_offset :5;
+    clut_loadmode   :3;
+
+};
+
 bitfield dma_tag_t
 {
     /** Quadword count. */
@@ -104,7 +138,9 @@ u32 footer[4];
 u32 pal[slices[0].PalletLen] @ slices[1].PalletOffset;
 };
 struct DimentionEnt{
-u32 stuff[16];
+u32 stuff[8];
+GS_TEX0 test;
+u32 stuff2[6];
 };
 
 struct VPT{
