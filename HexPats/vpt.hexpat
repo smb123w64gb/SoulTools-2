@@ -113,50 +113,58 @@ bitfield dma_tag_t
 };
 
 struct addressTable{
-
-dma_tag_t values[while(std::mem::read_unsigned($, 4) != 0x60000000)];
-dma_tag_t end;
+    dma_tag_t values[while(std::mem::read_unsigned($, 4) != 0x60000000)];
+    dma_tag_t end;
 };
 struct Pallet{
-u32 color[256];
+    u32 color[256];
 };
 struct TextureSlice{
-u32 stuff[24];
-u32 PalletLen;
-u32 count;
-padding[8];
-u16 UNK0;
-u16 UNK1;
-u32 PalletOffset;
-padding[8];
-//u8 data[PalletLen] @ PalletOffset;
+    u32 stuff[24];
+    u32 PalletLen;
+    u32 count;
+    padding[8];
+    u16 UNK0;
+    u16 UNK1;
+    u32 PalletOffset;
+    padding[8];
+    //u8 data[PalletLen] @ PalletOffset;
 };
+u32 trueCountTextures = 0;
 struct TextureEntry{
-
-TextureSlice slices[2];
-u32 footer[4];
-u32 pal[slices[0].PalletLen] @ slices[1].PalletOffset;
+    TextureSlice slices[2];
+    u32 footer[4];
+    trueCountTextures = trueCountTextures + 1;
+    u32 pal[slices[0].PalletLen] @ slices[1].PalletOffset+offsetto;
 };
 struct DimentionEnt{
-u32 stuff[8];
-GS_TEX0 test;
-u32 stuff2[6];
-};
+    u32 stuff[8];
+    GS_TEX0 test;
+    u32 stuff2[6];
+    };
 
 struct VPT{
-u32 Header;
+u8 byteMagic;
+u8 offset2DMAs;
+u8 offsetCount;
+u8 reserved;
 u8 dmaCount;
 u8 textureCount;
-u16 idk2;
+u8 extendedTexCount;
+u8 idk2;
 u32 address1;
 u32 address2;
 u32 address3;
-u32 footer;
-padding[8];
-addressTable textureInfo[dmaCount];
-TextureEntry textEnt[textureCount];
-DimentionEnt dimmy[textureCount];
+u32 address4;
+u32 address5;
+u32 address6;
+u32 trueDmaCount = dmaCount ? dmaCount * 2 : (offsetCount == 6) ;
+u32 trueTextureCount = textureCount ? textureCount * 2 : (offsetCount == 6) ;
+addressTable textureInfo[trueDmaCount];
+TextureEntry textEnt[while(std::mem::read_unsigned($, 4) == 268435462)];
+DimentionEnt dimmy[trueCountTextures];
 //Pallet pallets[textureCount];
 };
-
-VPT file @ 0;
+//u32 offsetto @ 0x14;
+u32 offsetto = 0;
+VPT file @ offsetto;
