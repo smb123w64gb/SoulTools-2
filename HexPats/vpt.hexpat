@@ -139,9 +139,9 @@ struct TextureEntry{
     u32 pal[slices[1].PalletLen] @ slices[1].PalletOffset+offsetto;
 };
 struct DimentionEnt{
-    u32 stuff[8];
+    u8 stuff[0x1D];
     GS_TEX0 test;
-    u32 stuff2[6];
+    u8 stuff2[0x1B];
     };
 struct textable{
 DimentionEnt *textures : u32;
@@ -164,9 +164,9 @@ u32 address3;//End of file
 u32 testa3 @ offsetto+address3;
 u32 address4;//End of file
 u32 testa4 @ offsetto+address4;
-u32 address5;
-u32 testa5 @ offsetto+address5;
-textable *texturesAlt[textureCount] : u32;
+//u32 address5;
+//u32 testa5 @ offsetto+address5;
+//textable *texturesAlt[textureCount] : u32;
 u32 trueDmaCount = dmaCount ? dmaCount * 2 : (offsetCount == 6) ;
 u32 trueTextureCount = textureCount ? textureCount * 2 : (offsetCount == 6) ;
 addressTable textureInfo[trueDmaCount];
