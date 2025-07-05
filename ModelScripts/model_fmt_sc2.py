@@ -664,7 +664,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 a.gc_read_nor(f)
                 norStride+= 0x10
                 self.VertexBuff2.append(a)
-                
+
         def read(self,f):
             totalVertCount = 0
             for x in range(4):
@@ -674,7 +674,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.VertBuffer1Offset = f.u32()
             self.VertBuffer2Offset = f.u32()
             sizeOfColor = (totalVertCount * 0xC) +(0x10 - ((totalVertCount * 0xC) % 0x10))
-            self.VertBuffer0Offset = self.VertBuffer1Offset - sizeOfColor
+            #self.VertBuffer0Offset = self.VertBuffer1Offset - sizeOfColor
             f.seek(self.WeightBufferOffset)
             high = 1
             for x in range(self.VertCounts[0]):
@@ -722,12 +722,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 a = self.BufferScaleVertex()
                 a.read(f)
                 self.VertexBuff2.append(a)
-                
-            f.seek(self.VertBuffer0Offset)
-            for x in range(totalVertCount):
-                a = self.BufferColorUV()
-                a.read(f)
-                self.VertexBuff0.append(a)
+            if(self.VertBuffer0Offset):
+                f.seek(self.VertBuffer0Offset)
+                for x in range(totalVertCount):
+                    a = self.BufferColorUV()
+                    a.read(f)
+                    self.VertexBuff0.append(a)
         def write(self,f):
             for x in self.VertCounts:
                 f.u32(x)
@@ -763,7 +763,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.PrimitiveType = 0
             self.FaceCount = 0
             self.MatrixIndex = 0
-            self.MaterailIndex = 0
+            self.MaterialIndex = 0
             self.FaceOffset = 0
             self.Buffer1Offset = 0
             self.Buffer2Offset = 0
@@ -796,7 +796,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 MatrixOffset = f.u32()
                 self.MatrixIndex = self.calc_materix_index(MatrixOffset)
                 MaterialOffset = f.u32()
-                self.MaterailIndex = self.calc_material_index(MaterialOffset)
+                self.MaterialIndex = self.calc_material_index(MaterialOffset)
                 self.FaceOffset = f.u32()
                 self.Buffer1Offset = f.u32()
                 self.Buffer2Offset = f.u32()
@@ -824,7 +824,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.u16(self.PrimitiveType)
             f.u32(self.FaceCount)
             f.u32(self.materixOffset + (self.MatrixIndex*400))
-            f.u32(self.materialOffset + (self.MaterailIndex*0x50))
+            f.u32(self.materialOffset + (self.MaterialIndex*0x50))
             f.u32(self.FaceOffset)
             f.u32(self.Buffer1Offset)
             f.u32(self.Buffer2Offset)
@@ -946,6 +946,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Normal = []
             self.Color = []
             self.TexCords = []
+            self.CenterRadius = [0.0]*4
         def calc_material_index(self,offset):
             rel = offset - self.materialOffset
             idx = int(rel/0x50)
@@ -1011,7 +1012,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     self.Mesh.append(head)
                 else:
                     toContinue = 0
-            print(topT)
             f.seek(self.Position1Offset)
             for x in range(self.topV):
                 self.PositionStorage.read(f)
@@ -1024,6 +1024,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.seek(self.TexCoordOffset)
             for x in range(topT):
                 self.UVStorage.read(f)
+            f.seek(self.BoundingOffset)
+            self.CenterRadius = f.f32_4()
             f.seek(ret)
 
             
@@ -1112,6 +1114,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             if(self.header.WeightTableCount):
                 self.f.seek(self.header.WeightTableOffset)
                 self.wgtTbl.read(self.f)
+        else:
+            if(self.header.WeightTableCount):
+                self.f.seek(self.header.WeightTableOffset)
+                self.wgtTbl.read_gc(self.f)
     def calcObj(self,x,head):
         x.materixOffset = self.materixOffset
         x.materialOffset = self.materialOffset
@@ -1199,7 +1205,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     x.Buffer1Offset = self.wgtTbl.VertBuffer0Offset
                     x.Buffer2Offset = self.wgtTbl.VertBuffer1Offset
                     x.Buffer3Offset = self.wgtTbl.VertBuffer2Offset
-                    print(hex(head))
                     if(head % 0x10):
                         head += 0x10 - (head % 0x10)
                     x.FaceOffset = head
@@ -1308,8 +1313,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         head += 40
         self.header.BoneNameOffset = head
         for x in self.boneInfo:
-            x.BoneNameOffset = head
-            head += len(x.Name)+1
+            if(len(x.Name)>0):
+                x.BoneNameOffset = head
+                head += len(x.Name)+1
+            else:
+                x.BoneNameOffset = 0
+            
 
     def write(self,ff):
         f = FWrite(ff)
@@ -1462,17 +1471,76 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 f.u8(0)
         f.write(self.unkArray)
         for x in self.boneInfo:
-            f.write(x.Name.encode())
-            f.u8(0)
+            if(len(x.Name)>0):
+                f.write(x.Name.encode())
+                f.u8(0)
         alighnment = f.tell() % 0x100
         if(alighnment):
             for y in range(0x100-alighnment):
                 f.u8(0)
     def toXbox(self):
         if(self.header.Endian):
+            largest = 0
             newObj_0 = []
             for x in self.Object_0:
                 obj = self.LayerObjectEntryXbox()
+                isStatic = x.Position2Offset == 0
+                obj.ObjectType = 0 if isStatic else 4
                 
+                isTristrip = x.Mesh[0].Type == 0x98
+                obj.PrimitiveType = 0 if isTristrip else 1
+                
+                big = 0
+                for y in x.Mesh:
+                    if(big < max(y.large)):
+                        big = max(y.large)
+                
+                newMesh = []
+                if(isStatic):
+                    newVert = [VM.LayerObjectEntryXbox.BufferStaticVertex()] * big
+                else:
+                    newVert = [VM.WeightTable.BufferColorUV()] * big
+                
+                isStart = True
+                prev = 0
+                for y in x.Mesh:
+                    if(not isStart):
+                        if(isTristrip):
+                            newMesh.append(prev)
+                            newMesh.append(y.IdxArr[0][0])
+                    for z in y.IdxArr:
+                        if(isStatic):
+                            newVert[z[0]].Position = x.PositionStorage.values[z[0]]
+                            newVert[z[0]].Normal = x.NormalStorage.values[z[1]]
+                            newVert[z[0]].RGBA = x.Color[z[2]]
+                            newVert[z[0]].UV = x.UVStorage.values[z[3]]
+                        else:
+                            newVert[z[0]].RGBA = x.Color[z[2]]
+                            newVert[z[0]].UV = x.UVStorage.values[z[3]]
+                        newMesh.append(z[0])
+                        prev = z[0]
+                    isStart = False
+                obj.Mesh = newMesh
+                if(isStatic):
+                    obj.StaticVerts = newVert
+                    obj.CenterRadius = x.CenterRadius
+                else:
+                    if(largest < big):
+                        self.wgtTbl.VertexBuff0 = newVert
+                obj.MatrixIndex = x.MatrixIndex
+                obj.MaterialIndex = x.MaterialIndex
+                newObj_0.append(obj)
+
+            newObj_1 = []
+            newObj_2 = []
+            self.Object_0 = newObj_0
+            self.Object_1 = newObj_1
+            self.Object_2 = newObj_2
+            
+            #at the end we change endian
+            self.header.Endian = False
+            self.header.MAGIC = b'VMX.'
+            self.header.Version = 4
+            self.f.swapEndian()
         else:
             print("We are Xbox!")
