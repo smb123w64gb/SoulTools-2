@@ -32,6 +32,19 @@ class SMD(object):
         def add(self,in_vxts):
             self.keys[in_vxts.hash] = in_vxts
             self.idxs.append(in_vxts.hash)
+        def sort(self):
+            sortkey = sorted(self.keys.items(), key=lambda kez: len(kez[1].bns))
+            self.keys = dict(sortkey)
+            
+            
+            
+        def poly(self):
+            poly_out = []
+            listy = list(self.keys)
+            for x in self.idxs:
+                poly_out.append(listy.index(x))
+            return poly_out
+            
     def __init__(self):
         self.mesh_original = {}
         self.bones = []
@@ -50,7 +63,6 @@ class SMD(object):
                     if x in self.mesh_original:
                         pass
                     else:
-                        print("im new")
                         self.mesh_original[x] = self.MVXT()
                 else:
                     vtx = self.SVXT()
@@ -61,12 +73,5 @@ class SMD(object):
                 tri += 1  
             if(x.find("nodes") == 0):
                 mode = 1
-                print(x)
             if(x.find("triangles")==0):
                 mode = 2
-                print (x)
-        print("Optimized Size")
-        print(len(self.mesh_original[dict_entry_name].keys))
-        print("Original Size")
-        print(len(self.mesh_original[dict_entry_name].idxs))
-            
