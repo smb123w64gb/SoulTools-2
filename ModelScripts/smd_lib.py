@@ -23,7 +23,9 @@ class SMD(object):
             self.uvs = str_to_float(split[6:8])
             bone_count = int(split[8])
             bonz = split[9:]
+            totalwgt = 0.0
             for x in range(bone_count):
+                totalwgt += float(bonz[(x*2)+1])
                 self.bns[bones[int(bonz[x*2])]] = float(bonz[(x*2)+1])
     class MVXT(object):
         def __init__(self):

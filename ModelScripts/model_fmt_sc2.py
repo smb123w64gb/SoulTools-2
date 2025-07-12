@@ -1298,8 +1298,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.header.BoneInfo['offset'] = head
         self.header.BoneInfo['count'] = len(self.boneInfo)
         head += len(self.boneInfo)*0x40
-        if(head % 0x100):
-            head += 0x100 - (head % 0x100)
+        if(head % 0x80):
+            head += 0x80 - (head % 0x80)
             
         self.header.TextureTableOffset = head
         self.textureOffset = head+0x14
@@ -1447,9 +1447,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     f.u16(y)
         for x in self.boneInfo:
             x.write(f)
-        alighnment = f.tell() % 0x100
+        alighnment = f.tell() % 0x80
         if(alighnment):
-            for y in range(0x100-alighnment):
+            for y in range(0x80-alighnment):
                 f.u8(0)
         f.write(self.texture)
         alighnment = f.tell() % 0x10

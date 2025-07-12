@@ -81,7 +81,7 @@ class VXTProto(object):
             self.pos = [0.0]*3
             self.nor = [0.0]*3
             self.uvs = [0.0]*2
-            self.wght = 1.0
+            self.wght = 1.0 
         def __str__(self):
              rt = ''
              rt += str("POS:%f,%f,%f\n"%(self.pos[0],self.pos[1],self.pos[2]))
