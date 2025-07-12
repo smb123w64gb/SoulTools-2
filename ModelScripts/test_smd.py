@@ -158,12 +158,14 @@ for x in mdl.boneInfo:
 
 
 finalPosWgt = []
-for x in riggedBuff:
+for xx in riggedBuff:
     wgtz = []
-    for idx,x in x.items():
+    for idx,x in xx.items():
         bone = boneindx[idx]
         updatedPos = applyTransform(x.pos,bone.BoneIdx,mdl.boneInfo)
         updatedNor = applyTransform_norm(x.nor,bone.BoneIdx,mdl.boneInfo)
+        if(len(xx)>1):
+            updatedPos = [(updatedPos[0]*x.wght),(updatedPos[1]*x.wght),(updatedPos[2]*x.wght)]
         wgt = sc2m.VM.WeightTable.WeightDef()
         wgt.Pos = updatedPos
         wgt.Nor = updatedNor
