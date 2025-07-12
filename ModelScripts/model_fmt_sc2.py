@@ -1184,6 +1184,22 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.header.MaterialsInfo['count'] = len(self.materials)
         head += len(self.materials) * 80
         if(self.header.WeightTableCount):
+            single = 0
+            double = 0
+            triple = 0
+            quadpl = 0
+            for x in self.wgtTbl.WeightBuffer:
+                l = len(x)
+                match l:
+                    case 1:
+                        single +=1
+                    case 2:
+                        double +=1
+                    case 3:
+                        triple +=1
+                    case _:
+                        quadpl +=1
+            self.wgtTbl.VertCounts = [single,double,triple,quadpl]
             self.wgtTbl.VertBuffer0Offset = head
             head += len(self.wgtTbl.VertexBuff0)*12
             if(head % 0x10):
@@ -1374,10 +1390,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                             f.u8(0)
                     for y in x.Mesh:
                         f.u16(y)
-            alighnment = f.tell() % 0x10
-            if(alighnment):
-                for y in range(0x10-alighnment):
-                    f.u8(0)
         for x in self.Object_0:
             if x.ObjectType == 0:
                 alighnment = f.tell() % 0x10
