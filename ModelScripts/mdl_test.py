@@ -13,8 +13,6 @@ mdl_file.close()
 
 mdl_file = open(sys.argv[2], "wb")
 
-mdl.Object_0 = mdl.Object_0[:9]
-
 mdl.write(mdl_file)
 mdl_file.close()
 curtop = 1

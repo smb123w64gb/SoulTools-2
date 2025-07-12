@@ -830,6 +830,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.u32(self.Buffer2Offset)
             f.u32(self.Buffer3Offset)
             f.u32(self.Buffer4Offset)
+            print(hex(self.CenterRadiusOffset))
             f.u32(self.CenterRadiusOffset)
         def __str__(self):
             rt = ""
@@ -884,11 +885,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             valz = []
             for x in range(numVal):
                 valz.append(float(float(reader())*devisor))
-            self.values.append(valz)
-
-            
-
-            
+            self.values.append(valz)        
     class LayerObjectEntryGC(object):
         class PolyHead(object):
             def __init__(self,StrideArr,type):
@@ -1230,34 +1227,31 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     x.FaceOffset = head
                     x.FaceCount = len(x.Mesh)
                     head += len(x.Mesh)*2
-
-        if(head % 0x10):
-            head += 0x10 - (head % 0x10)
         
         for x in self.Object_0:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
             if(x.ObjectType == 0):
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
                 x.Buffer1Offset = head
                 x.Buffer4Offset = head
                 head += len(x.StaticVerts) * 40
                 if(head % 0x10):
                     head += 0x10 - (head % 0x10)
+               
                 x.CenterRadiusOffset = head
+                print(hex(x.CenterRadiusOffset))
                 head += 0x10
-        for x in self.Object_0:
-            if(x.ObjectType == 0):
-                if(head % 0x10):
-                    head += 0x10 - (head % 0x10)
                 x.FaceOffset = head
                 x.FaceCount = len(x.Mesh)
                 head += len(x.Mesh)*2
-                if(head % 0x10):
-                    head += 0x10 - (head % 0x10)
         for x in self.Object_1:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
             if(x.ObjectType == 0):
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
                 x.Buffer1Offset = head
                 x.Buffer4Offset = head
                 head += len(x.StaticVerts) * 40
@@ -1265,19 +1259,15 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     head += 0x10 - (head % 0x10)
                 x.CenterRadiusOffset = head
                 head += 0x10
-        for x in self.Object_1:
-            if(x.ObjectType == 0):
-                if(head % 0x10):
-                    head += 0x10 - (head % 0x10)
                 x.FaceOffset = head
                 x.FaceCount = len(x.Mesh)
                 head += len(x.Mesh)*2
-                if(head % 0x10):
-                    head += 0x10 - (head % 0x10)
         for x in self.Object_2:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
             if(x.ObjectType == 0):
+                if(head % 0x10):
+                    head += 0x10 - (head % 0x10)
                 x.Buffer1Offset = head
                 x.Buffer4Offset = head
                 head += len(x.StaticVerts) * 40
@@ -1285,16 +1275,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     head += 0x10 - (head % 0x10)
                 x.CenterRadiusOffset = head
                 head += 0x10
-        for x in self.Object_2:
-            if(x.ObjectType == 0):
-                if(head % 0x10):
-                    head += 0x10 - (head % 0x10)
                 x.FaceOffset = head
                 x.FaceCount = len(x.Mesh)
                 head += len(x.Mesh)*2
-                if(head % 0x10):
-                    head += 0x10 - (head % 0x10)
-
 
         self.header.BoneInfo['offset'] = head
         self.header.BoneInfo['count'] = len(self.boneInfo)
@@ -1397,6 +1380,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     f.u8(0)
         for x in self.Object_0:
             if x.ObjectType == 0:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
                 for y in x.StaticVerts:
                     y.write(f)
                 alighnment = f.tell() % 0x10
@@ -1404,8 +1391,14 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     for y in range(0x10-alighnment):
                         f.u8(0)
                 f.f32_4(x.CenterRadius)
+                for y in x.Mesh:
+                    f.u16(y)
         for x in self.Object_1:
             if x.ObjectType == 0:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
                 for y in x.StaticVerts:
                     y.write(f)
                 alighnment = f.tell() % 0x10
@@ -1413,8 +1406,14 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     for y in range(0x10-alighnment):
                         f.u8(0)
                 f.f32_4(x.CenterRadius)
+                for y in x.Mesh:
+                    f.u16(y)
         for x in self.Object_2:
             if x.ObjectType == 0:
+                alighnment = f.tell() % 0x10
+                if(alighnment):
+                    for y in range(0x10-alighnment):
+                        f.u8(0)
                 for y in x.StaticVerts:
                     y.write(f)
                 alighnment = f.tell() % 0x10
@@ -1422,30 +1421,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     for y in range(0x10-alighnment):
                         f.u8(0)
                 f.f32_4(x.CenterRadius)
-        for x in self.Object_0:
-            if x.ObjectType == 0:
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
                 for y in x.Mesh:
                     f.u16(y)
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
-        for x in self.Object_1:
-            if x.ObjectType == 0:
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
-                for y in x.Mesh:
-                    f.u16(y)
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
+        
+        
         for x in self.Object_2:
             if x.ObjectType == 0:
                 alighnment = f.tell() % 0x10
@@ -1454,10 +1433,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                         f.u8(0)
                 for y in x.Mesh:
                     f.u16(y)
-                alighnment = f.tell() % 0x10
-                if(alighnment):
-                    for y in range(0x10-alighnment):
-                        f.u8(0)
         for x in self.boneInfo:
             x.write(f)
         alighnment = f.tell() % 0x100
@@ -1510,13 +1485,18 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                             newMesh.append(y.IdxArr[0][0])
                     for z in y.IdxArr:
                         if(isStatic):
-                            newVert[z[0]].Position = x.PositionStorage.values[z[0]]
-                            newVert[z[0]].Normal = x.NormalStorage.values[z[1]]
-                            newVert[z[0]].RGBA = x.Color[z[2]]
-                            newVert[z[0]].UV = x.UVStorage.values[z[3]]
+                            nVert = VM.LayerObjectEntryXbox.BufferStaticVertex()
+                            nVert.Position = x.PositionStorage.values[z[0]]
+                            nVert.Normal = x.NormalStorage.values[z[1]]
+                            nVert.RGBA = x.Color[z[2]]
+                            nVert.UV = x.UVStorage.values[z[3]]
+                            newVert[z[0]] = nVert
+                            print(newVert[z[0]].Position)
                         else:
-                            newVert[z[0]].RGBA = x.Color[z[2]]
-                            newVert[z[0]].UV = x.UVStorage.values[z[3]]
+                            nVert = VM.WeightTable.BufferColorUV()
+                            nVert.RGBA = x.Color[z[2]]
+                            nVert.UV = x.UVStorage.values[z[3]]
+                            newVert[z[0]] = nVert
                         newMesh.append(z[0])
                         prev = z[0]
                     isStart = False
@@ -1532,7 +1512,113 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 newObj_0.append(obj)
 
             newObj_1 = []
+            for x in self.Object_1:
+                obj = self.LayerObjectEntryXbox()
+                isStatic = x.Position2Offset == 0
+                obj.ObjectType = 0 if isStatic else 4
+                
+                isTristrip = x.Mesh[0].Type == 0x98
+                obj.PrimitiveType = 0 if isTristrip else 1
+                
+                big = 0
+                for y in x.Mesh:
+                    if(big < max(y.large)):
+                        big = max(y.large)
+                
+                newMesh = []
+                if(isStatic):
+                    newVert = [VM.LayerObjectEntryXbox.BufferStaticVertex()] * big
+                else:
+                    newVert = [VM.WeightTable.BufferColorUV()] * big
+                
+                isStart = True
+                prev = 0
+                for y in x.Mesh:
+                    if(not isStart):
+                        if(isTristrip):
+                            newMesh.append(prev)
+                            newMesh.append(y.IdxArr[0][0])
+                    for z in y.IdxArr:
+                        if(isStatic):
+                            nVert = VM.LayerObjectEntryXbox.BufferStaticVertex()
+                            nVert.Position = x.PositionStorage.values[z[0]]
+                            nVert.Normal = x.NormalStorage.values[z[1]]
+                            nVert.RGBA = x.Color[z[2]]
+                            nVert.UV = x.UVStorage.values[z[3]]
+                            newVert[z[0]] = nVert
+                            print(newVert[z[0]].Position)
+                        else:
+                            nVert = VM.WeightTable.BufferColorUV()
+                            nVert.RGBA = x.Color[z[2]]
+                            nVert.UV = x.UVStorage.values[z[3]]
+                            newVert[z[0]] = nVert
+                        newMesh.append(z[0])
+                        prev = z[0]
+                    isStart = False
+                obj.Mesh = newMesh
+                if(isStatic):
+                    obj.StaticVerts = newVert
+                    obj.CenterRadius = x.CenterRadius
+                else:
+                    if(largest < big):
+                        self.wgtTbl.VertexBuff0 = newVert
+                obj.MatrixIndex = x.MatrixIndex
+                obj.MaterialIndex = x.MaterialIndex
+                newObj_1.append(obj)
             newObj_2 = []
+            for x in self.Object_2:
+                obj = self.LayerObjectEntryXbox()
+                isStatic = x.Position2Offset == 0
+                obj.ObjectType = 0 if isStatic else 4
+                
+                isTristrip = x.Mesh[0].Type == 0x98
+                obj.PrimitiveType = 0 if isTristrip else 1
+                
+                big = 0
+                for y in x.Mesh:
+                    if(big < max(y.large)):
+                        big = max(y.large)
+                
+                newMesh = []
+                if(isStatic):
+                    newVert = [VM.LayerObjectEntryXbox.BufferStaticVertex()] * big
+                else:
+                    newVert = [VM.WeightTable.BufferColorUV()] * big
+                
+                isStart = True
+                prev = 0
+                for y in x.Mesh:
+                    if(not isStart):
+                        if(isTristrip):
+                            newMesh.append(prev)
+                            newMesh.append(y.IdxArr[0][0])
+                    for z in y.IdxArr:
+                        if(isStatic):
+                            nVert = VM.LayerObjectEntryXbox.BufferStaticVertex()
+                            nVert.Position = x.PositionStorage.values[z[0]]
+                            nVert.Normal = x.NormalStorage.values[z[1]]
+                            nVert.RGBA = x.Color[z[2]]
+                            nVert.UV = x.UVStorage.values[z[3]]
+                            newVert[z[0]] = nVert
+                            print(newVert[z[0]].Position)
+                        else:
+                            nVert = VM.WeightTable.BufferColorUV()
+                            nVert.RGBA = x.Color[z[2]]
+                            nVert.UV = x.UVStorage.values[z[3]]
+                            newVert[z[0]] = nVert
+                        newMesh.append(z[0])
+                        prev = z[0]
+                    isStart = False
+                obj.Mesh = newMesh
+                if(isStatic):
+                    obj.StaticVerts = newVert
+                    obj.CenterRadius = x.CenterRadius
+                else:
+                    if(largest < big):
+                        self.wgtTbl.VertexBuff0 = newVert
+                obj.MatrixIndex = x.MatrixIndex
+                obj.MaterialIndex = x.MaterialIndex
+                newObj_2.append(obj)
             self.Object_0 = newObj_0
             self.Object_1 = newObj_1
             self.Object_2 = newObj_2
