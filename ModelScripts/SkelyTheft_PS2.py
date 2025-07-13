@@ -14,13 +14,21 @@ slave = open(sys.argv[2], "rb")
 ps2 = model_fmt_sc2.FRead(slave)
 ps2.seek(10)
 bonecount = ps2.u16()
-ps2.seek(0x10)
+ps2.seek(0x20)
 boneoffset = ps2.u32()
+ps2.seek(boneoffset)
+readr = model_fmt_sc2.FRead(ps2)
+bones = []
+for x in range(bonecount):
+    bon = model_fmt_sc2.VM.BoneInfo()
+    bon.read(readr,True)
+    bones.append(bon)
+
 
 
 slave.close()
 
-mdl.boneInfo = copy.deepcopy(mdl_s.boneInfo)
+mdl.boneInfo = copy.deepcopy(bones)
 
 output = open(sys.argv[3], "wb")
 mdl.write(output)

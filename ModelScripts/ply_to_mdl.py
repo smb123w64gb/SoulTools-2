@@ -83,6 +83,9 @@ mdl_lay = mdl_txt.toVMX()
 mdl_lay.MaterailIndex = 0
 mdl.Object_0[0] = mdl_lay
 mdl.Object_0 = mdl.Object_0[:1]
+mdl.Object_1 = []
+mdl.Object_2 = []
+mdl.header.WeightTableCount = 0
 mdl.write(mdl_file)
 
 

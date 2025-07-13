@@ -164,6 +164,19 @@ class FRead(object): #Generic file reader
         if(offset):
             self.seek(ret)
         return result
+    def getStringSpecal(self,offset = 0):
+        if(offset):
+            ret = self.file.tell()
+            self.seek(offset)
+        result = ""
+        tmpChar = chr(self.u8()-0x40)
+        print(tmpChar)
+        while ord(tmpChar) != 0:
+            result += tmpChar
+            tmpChar = chr(self.u8()-0x40)
+        if(offset):
+            self.seek(ret)
+        return result
 class FWrite(object): #Generic file writer
     def __init__(self,f,big_endian=False):
         self.endian='<'
@@ -496,7 +509,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoneIdx = 0
             self.unk2 = 1
             self.Name = ""
-        def read(self,f):
+        def read(self,f,isSC3=False):
             self.EndPositionXYZScale = f.f32_4()
             self.StartPositionXYZScale = f.f32_4()
             self.Rotation = f.f32_3()
@@ -507,7 +520,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.BoneIdx = f.u8()
             self.unk2 = f.u8()
             if(self.BoneNameOffset):
-                self.Name = f.getString(self.BoneNameOffset)
+                if(isSC3):
+                    self.Name = f.getStringSpecal(self.BoneNameOffset)
+                else:
+                    self.Name = f.getString(self.BoneNameOffset)
         def write(self,f):
             f.f32_4(self.EndPositionXYZScale)
             f.f32_4(self.StartPositionXYZScale)
@@ -1184,22 +1200,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.header.MaterialsInfo['count'] = len(self.materials)
         head += len(self.materials) * 80
         if(self.header.WeightTableCount):
-            single = 0
-            double = 0
-            triple = 0
-            quadpl = 0
-            for x in self.wgtTbl.WeightBuffer:
-                l = len(x)
-                match l:
-                    case 1:
-                        single +=1
-                    case 2:
-                        double +=1
-                    case 3:
-                        triple +=1
-                    case _:
-                        quadpl +=1
-            self.wgtTbl.VertCounts = [single,double,triple,quadpl]
             self.wgtTbl.VertBuffer0Offset = head
             head += len(self.wgtTbl.VertexBuff0)*12
             if(head % 0x10):
@@ -1365,6 +1365,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             for x in self.wgtTbl.WeightBuffer:
                 for y in x:
                     y.write(f)
+            print(hex(f.tell()))
             f.write(b'\xFF'*0x10)
             for x in self.Object_0:
                 if x.ObjectType == 0x4:

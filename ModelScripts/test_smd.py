@@ -158,13 +158,33 @@ for x in mdl.boneInfo:
 
 
 finalPosWgt = []
+curhigh = 1
+topfour = 4
+curIdx = 0
+wgtz = []
+weghtsub = []
 for xx in riggedBuff:
+    if(len(xx)>topfour):
+        #BindCOunt / CurVtx / SubVertex
+        finalPosWgt[-1][-1][-1].stat = 1
+        topfour += 1
+    elif(curhigh<len(xx)):
+        if(curhigh==4):
+            pass
+        else:
+            if(len(weghtsub)):
+                finalPosWgt.append(weghtsub)
+            weghtsub = []
+            curhigh += 1
     wgtz = []
+    print("split")
     for idx,x in xx.items():
+        
         bone = boneindx[idx]
         updatedPos = applyTransform(x.pos,bone.BoneIdx,mdl.boneInfo)
         updatedNor = applyTransform_norm(x.nor,bone.BoneIdx,mdl.boneInfo)
         if(len(xx)>1):
+            print(bone.BoneIdx)
             updatedPos = [(updatedPos[0]*x.wght),(updatedPos[1]*x.wght),(updatedPos[2]*x.wght)]
         wgt = sc2m.VM.WeightTable.WeightDef()
         wgt.Pos = updatedPos
@@ -172,8 +192,26 @@ for xx in riggedBuff:
         wgt.bWgt = x.wght
         wgt.bIdx = bone.BoneIdx
         wgtz.append(wgt)
-    finalPosWgt.append(wgtz)
-mdl.wgtTbl.WeightBuffer = finalPosWgt
+    weghtsub.append(wgtz)
+finalPosWgt.append(weghtsub)
+if(curhigh==4):
+    finalPosWgt[-1][-1][-1].stat = 4
+
+
+flatbuffer = []
+totalry = [0,0,0,0]
+idx = 0
+for x in finalPosWgt:
+    buf = []
+    for y in x:
+        totalry[idx] += 1
+        for z in y:
+            buf.append(z)
+    idx+=1
+    flatbuffer.append(buf)
+mdl.wgtTbl.VertCounts = totalry
+mdl.wgtTbl.WeightBuffer = flatbuffer
+
 
 mdl_file = open(sys.argv[3], "wb")
 
