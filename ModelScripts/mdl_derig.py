@@ -32,5 +32,8 @@ for x in mdl.Object_2:
         newObjs.append(x)
 mdl.Object_2 = newObjs
 
+mdl.wgtTbl = mdl.WeightTable()
+mdl.header.WeightTableCount = 0
+
 mdl_file = open(sys.argv[2], "wb")
 mdl.write(mdl_file)

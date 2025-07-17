@@ -1,6 +1,14 @@
 import struct
 from enum import Flag, auto, Enum
 
+def rotateMtx(matrix):
+
+    newmtx = [[],[],[],[]]
+    for y in range(4):
+        for idx,x in enumerate(matrix):
+            newmtx[y].append(x[y])
+    return newmtx
+
 class D3DFORMAT(Enum):
     D3DFMT_L8 = 0x00
     D3DFMT_AL8 = 0x01
@@ -130,7 +138,7 @@ class FRead(object): #Generic file reader
         return struct.unpack(self.endian+'e', self.file.read(2))[0]
     def g16(self):
         val = struct.unpack(self.endian+'h', self.file.read(2))[0]
-        val = float(val)/8192.0
+        val = val/8192
         return val
     def g16_2(self):
         val = [self.g16(),self.g16()]
@@ -170,7 +178,6 @@ class FRead(object): #Generic file reader
             self.seek(offset)
         result = ""
         tmpChar = chr(self.u8()-0x40)
-        print(tmpChar)
         while ord(tmpChar) != 0:
             result += tmpChar
             tmpChar = chr(self.u8()-0x40)
@@ -561,7 +568,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 self.PositionScale = f.f32()
             def gc_read_nor(self,f):
                 self.Normal = f.f32_3()
-                self.NormalScale = f.f32()
             def write(self,f):
                 f.f32_3(self.Position)
                 f.f32(self.PositionScale)
@@ -651,12 +657,24 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             high = 4
             for x in range(self.VertCounts[3]):
                 arr = []
+                totalWght = 0.0
+                total_unbinded = 0
                 for y in range(high):
                     a = self.WeightDef()
                     a.read_gc(f)
+                    totalWght+=a.bWgt
+                    if(a.bWgt<=0.0):
+                        total_unbinded += 1
                     arr.append(a)
                     if(a.stat == 1):
                         high +=1
+                if(total_unbinded):
+                    fixwgt = (1.0-totalWght)/total_unbinded
+                    for y in arr:
+                        if(y.bWgt<=0.0):
+                            y.bWgt = fixwgt
+                            totalWght += fixwgt
+
                 self.WeightBuffer.append(arr)
             posStride = 0
             norStride = 0
@@ -680,7 +698,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 a.gc_read_nor(f)
                 norStride+= 0x10
                 self.VertexBuff2.append(a)
-
         def read(self,f):
             totalVertCount = 0
             for x in range(4):
@@ -750,8 +767,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.u32(self.WeightBufferOffset )
             f.u32(self.VertBuffer1Offset)
             f.u32(self.VertBuffer2Offset)
-                
-    
     class LayerObjectEntryXbox(object):
         class BufferStaticVertex(object):
             def __init__(self):
@@ -846,7 +861,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.u32(self.Buffer2Offset)
             f.u32(self.Buffer3Offset)
             f.u32(self.Buffer4Offset)
-            print(hex(self.CenterRadiusOffset))
             f.u32(self.CenterRadiusOffset)
         def __str__(self):
             rt = ""
@@ -876,31 +890,33 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         def read(self,f):
             numVal = 0
             reader = f.u8
-            devisor = 1.0
+            devisor = 1
             
             match(self.format):
                 case 0:
                     numVal = self.stride
                     reader = f.u8
-                    devisor = float(1.0 / float(1<<self.fraction))
+                    devisor = (1<<self.fraction)
                 case 1:
                     numVal = self.stride
                     reader = f.s8
-                    devisor = float(1.0 / float(1<<self.fraction))
+                    devisor = (1<<self.fraction)
                 case 2:
                     numVal = int(self.stride / 2)
                     reader = f.u16
-                    devisor = float(1.0 / float(1<<self.fraction))
+                    devisor = (1<<self.fraction)
                 case 3:
                     numVal = int(self.stride / 2)
                     reader = f.s16
-                    devisor = float(1.0 / float(1<<self.fraction))
+                    devisor = (1<<self.fraction)
                 case _:
                     numVal = int(self.stride / 4)
                     reader = f.f32
             valz = []
+
             for x in range(numVal):
-                valz.append(float(float(reader())*devisor))
+                valbefore = reader()
+                valz.append(float(float(valbefore)/devisor))
             self.values.append(valz)        
     class LayerObjectEntryGC(object):
         class PolyHead(object):
@@ -1257,7 +1273,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     head += 0x10 - (head % 0x10)
                
                 x.CenterRadiusOffset = head
-                print(hex(x.CenterRadiusOffset))
                 head += 0x10
                 x.FaceOffset = head
                 x.FaceCount = len(x.Mesh)
@@ -1365,7 +1380,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             for x in self.wgtTbl.WeightBuffer:
                 for y in x:
                     y.write(f)
-            print(hex(f.tell()))
             f.write(b'\xFF'*0x10)
             for x in self.Object_0:
                 if x.ObjectType == 0x4:
@@ -1504,7 +1518,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                             nVert.RGBA = x.Color[z[2]]
                             nVert.UV = x.UVStorage.values[z[3]]
                             newVert[z[0]] = nVert
-                            print(newVert[z[0]].Position)
                         else:
                             nVert = VM.WeightTable.BufferColorUV()
                             nVert.RGBA = x.Color[z[2]]
@@ -1559,7 +1572,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                             nVert.RGBA = x.Color[z[2]]
                             nVert.UV = x.UVStorage.values[z[3]]
                             newVert[z[0]] = nVert
-                            print(newVert[z[0]].Position)
                         else:
                             nVert = VM.WeightTable.BufferColorUV()
                             nVert.RGBA = x.Color[z[2]]
@@ -1610,10 +1622,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                             nVert = VM.LayerObjectEntryXbox.BufferStaticVertex()
                             nVert.Position = x.PositionStorage.values[z[0]]
                             nVert.Normal = x.NormalStorage.values[z[1]]
+                            
                             nVert.RGBA = x.Color[z[2]]
                             nVert.UV = x.UVStorage.values[z[3]]
                             newVert[z[0]] = nVert
-                            print(newVert[z[0]].Position)
                         else:
                             nVert = VM.WeightTable.BufferColorUV()
                             nVert.RGBA = x.Color[z[2]]
@@ -1635,7 +1647,9 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.Object_0 = newObj_0
             self.Object_1 = newObj_1
             self.Object_2 = newObj_2
-            
+            #change matrix order
+            for x in self.matrix_table:
+                x.Matrix.matrix = rotateMtx(x.Matrix.matrix)
             #at the end we change endian
             self.header.Endian = False
             self.header.MAGIC = b'VMX.'
