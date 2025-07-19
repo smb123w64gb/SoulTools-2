@@ -78,56 +78,57 @@ def applyTransform_norm(vertex,bone_idx,bonez):
 currentVertHv = 1
 currentVertHn = 1
 currentVertHt = 1
-for x in mdl.Object_0:
-    polygonsv = []
-    polygonsn = []
-    polygonst = []
-    obj.write(str("o Obj_%02i\n" % currentObj))
-    currentObj+=1
-    nextHiv = len(x.PositionStorage.values)
-    nextHin = len(x.NormalStorage.values)
-    nextHit = len(x.UVStorage.values)
-    for z in x.PositionStorage.values:
-        y = applyTransform(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
-        obj.write(str("v %f %f %f\n" % (y[0],y[1],y[2])))
-    for z in x.NormalStorage.values:
-        y = applyTransform_norm(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
-        obj.write(str("vn %f %f %f\n" % (y[0],y[1],y[2])))
-    for y in x.UVStorage.values:
-        obj.write(str("vt %f %f\n" % (y[0],y[1])))
+for zzz in [mdl.Object_0,mdl.Object_1,mdl.Object_2]:
+    for x in zzz:
+        polygonsv = []
+        polygonsn = []
+        polygonst = []
+        obj.write(str("o Obj_%02i\n" % currentObj))
+        currentObj+=1
+        nextHiv = len(x.PositionStorage.values)
+        nextHin = len(x.NormalStorage.values)
+        nextHit = len(x.UVStorage.values)
+        for z in x.PositionStorage.values:
+            y = applyTransform(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
+            obj.write(str("v %f %f %f\n" % (y[0],y[1],y[2])))
+        for z in x.NormalStorage.values:
+            y = applyTransform_norm(z,mdl.matrix_table[x.MatrixIndex].ParentBoneIdx,mdl.boneInfo)
+            obj.write(str("vn %f %f %f\n" % (y[0],y[1],y[2])))
+        for y in x.UVStorage.values:
+            obj.write(str("vt %f %f\n" % (y[0],y[1])))
 
-    
-    for z in x.Mesh:
-        posTri = []
-        norTri = []
-        texTri = []
-        for y in z.IdxArr:
-            posTri.append(y[0])
-        for y in z.IdxArr:
-            norTri.append(y[1])
-        for y in z.IdxArr:
-            texTri.append(y[3])
-        polygonsv.append(triangle_strip_to_list(posTri))
-        polygonsn.append(triangle_strip_to_list(norTri))
-        polygonst.append(triangle_strip_to_list(texTri))
-    flatPie = []
-    for x in range(len(polygonsv)):
-        v = polygonsv[x]
-        n = polygonsn[x]
-        t = polygonst[x]
-        if(len(v)):
-            for y in range(len(v)):
-                for z in range(3):
-                    flatPie.append((v[y][z],t[y][z],n[y][z]))
-    msh_idx = 0
-    for pp in flatPie:
-        if(msh_idx == 0):
-            obj.write("f")
-        obj.write(str(" %i/%i/" % ((pp[0]+currentVertHv),(pp[1]+currentVertHt))))
-        msh_idx += 1
-        if(msh_idx == 3):
-            obj.write("\n")
-            msh_idx = 0
-    currentVertHv += nextHiv
-    #currentVertHn += nextHin
-    currentVertHt += nextHit
+        
+        for z in x.Mesh:
+            posTri = []
+            norTri = []
+            texTri = []
+            for y in z.IdxArr:
+                posTri.append(y[0])
+            for y in z.IdxArr:
+                norTri.append(y[1])
+            for y in z.IdxArr:
+                texTri.append(y[3])
+            polygonsv.append(triangle_strip_to_list(posTri))
+            polygonsn.append(triangle_strip_to_list(norTri))
+            polygonst.append(triangle_strip_to_list(texTri))
+        flatPie = []
+        for x in range(len(polygonsv)):
+            v = polygonsv[x]
+            n = polygonsn[x]
+            t = polygonst[x]
+            if(len(v)):
+                for y in range(len(v)):
+                    for z in range(3):
+                        flatPie.append((v[y][z],t[y][z],n[y][z]))
+        msh_idx = 0
+        for pp in flatPie:
+            if(msh_idx == 0):
+                obj.write("f")
+            obj.write(str(" %i/%i/" % ((pp[0]+currentVertHv),(pp[1]+currentVertHt))))
+            msh_idx += 1
+            if(msh_idx == 3):
+                obj.write("\n")
+                msh_idx = 0
+        currentVertHv += nextHiv
+        #currentVertHn += nextHin
+        currentVertHt += nextHit

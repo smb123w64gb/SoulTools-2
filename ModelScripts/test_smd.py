@@ -96,6 +96,15 @@ inModel = smd_lib.SMD()
 inModel.read(obj)
 mesh = []
 
+
+
+mdl_file = open(sys.argv[2], "rb")
+
+mdl = sc2m.VM()
+
+mdl.read(mdl_file)
+mdl_file.close()
+
 for xx,idx in inModel.mesh_original.items():
     x:smd_lib.SMD.MVXT = idx
     x.sort()
@@ -108,8 +117,8 @@ for xx,idx in inModel.mesh_original.items():
         binds = {}
 
         vtnr = sc2m.VM.WeightTable.BufferScaleVertex()
-        vtnr.Position = y.pos
-        vtnr.Normal = y.nor
+        vtnr.Position = applyTransform(y.pos,0,mdl.boneInfo)
+        vtnr.Normal = applyTransform_norm(y.nor,0,mdl.boneInfo)
         staticBuffPOSNOR.append(vtnr)
 
         uvcl = sc2m.VM.WeightTable.BufferColorUV()
@@ -124,13 +133,6 @@ for xx,idx in inModel.mesh_original.items():
              vt.wght = z
              binds[idz] = vt
         riggedBuff.append(binds)
-
-mdl_file = open(sys.argv[2], "rb")
-
-mdl = sc2m.VM()
-
-mdl.read(mdl_file)
-mdl_file.close()
 
 mdl.matrix_table = mdl.matrix_table[:1]
 mdl.materials = mdl.materials[:1]
@@ -177,14 +179,12 @@ for xx in riggedBuff:
             weghtsub = []
             curhigh += 1
     wgtz = []
-    print("split")
     for idx,x in xx.items():
         
         bone = boneindx[idx]
         updatedPos = applyTransform(x.pos,bone.BoneIdx,mdl.boneInfo)
         updatedNor = applyTransform_norm(x.nor,bone.BoneIdx,mdl.boneInfo)
         if(len(xx)>1):
-            print(bone.BoneIdx)
             updatedPos = [(updatedPos[0]*x.wght),(updatedPos[1]*x.wght),(updatedPos[2]*x.wght)]
         wgt = sc2m.VM.WeightTable.WeightDef()
         wgt.Pos = updatedPos
@@ -217,7 +217,3 @@ mdl_file = open(sys.argv[3], "wb")
 
 mdl.write(mdl_file)
 mdl_file.close()
-
-
-    #print(x.poly())
-    #print(x.idxs)
