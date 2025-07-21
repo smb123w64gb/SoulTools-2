@@ -685,23 +685,29 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             high = 4
             for x in range(self.VertCounts[3]):
                 arr = []
-                totalWght = 0.0
                 total_unbinded = 0
+                where_zero = []
                 for y in range(high):
                     a = self.WeightDef()
                     a.read_gc(f)
-                    totalWght+=a.bWgt
                     if(a.bWgt<=0.0):
                         total_unbinded += 1
+                        where_zero.append(y)
                     arr.append(a)
                     if(a.stat == 1):
                         high +=1
-                if(total_unbinded):
-                    fixwgt = (1.0-totalWght)/total_unbinded
-                    for y in arr:
-                        if(y.bWgt<=0.0):
-                            y.bWgt = fixwgt
-                            totalWght += fixwgt
+                for y in where_zero:
+                    sharedWgt = 0.0
+                    for z in range(len(arr[y:])):
+                        valy = arr[y+z]
+                        if(valy.bWgt>0):
+                            arr[y+z].bWgt *= 0.5
+                            arr[y].bWgt = arr[y+z].bWgt
+                            break
+                        print(valy.bWgt)
+
+
+                    print("Zero Bind at %i" % y)
 
                 self.WeightBuffer.append(arr)
             posStride = 0

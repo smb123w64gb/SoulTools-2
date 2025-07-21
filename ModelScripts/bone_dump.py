@@ -13,9 +13,8 @@ mdl_file.close()
 
 mdl_file = open(sys.argv[2], "w")
 for x in mdl.boneInfo:
-    for y in x.to_dict().items():
-        mdl_file.write(str(y[1]))
-        mdl_file.write('\n')
+    mdl_file.write(str(x.Name))
+    mdl_file.write('\n')
     
 
 mdl_file.close()

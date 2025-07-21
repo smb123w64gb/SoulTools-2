@@ -2,6 +2,7 @@ import sys
 import smd_lib
 import model_fmt_sc2 as sc2m
 import mathutils
+import copy
 
 import math
 
@@ -94,6 +95,10 @@ class VXTProto(object):
 
 inModel = smd_lib.SMD()
 inModel.read(obj)
+inModel.sort()
+print(inModel.mesh_original)
+
+    
 mesh = []
 
 
@@ -104,54 +109,60 @@ mdl = sc2m.VM()
 
 mdl.read(mdl_file)
 mdl_file.close()
+riggedBuff = []
+staticBuffPOSNOR = []
+staticBuffUVSCOL = []
+for idy,y in inModel.merged_list.items():
+    binds = {}
+    vtnr = sc2m.VM.WeightTable.BufferScaleVertex()
+    vtnr.Position = applyTransform(y.pos,0,mdl.boneInfo)
+    vtnr.Normal = applyTransform_norm(y.nor,0,mdl.boneInfo)
+    staticBuffPOSNOR.append(vtnr)
 
-for xx,idx in inModel.mesh_original.items():
-    x:smd_lib.SMD.MVXT = idx
-    x.sort()
-    mesh = x.poly()
-    riggedBuff = []
-    staticBuffPOSNOR = []
-    staticBuffUVSCOL = []
-    for idy,y in x.keys.items():
+    uvcl = sc2m.VM.WeightTable.BufferColorUV()
+    uvcl.UV = y.uvs
+    staticBuffUVSCOL.append(uvcl)
+    
+    for idz,z in y.bns.items():
+            vt = VXTProto()
+            vt.pos = y.pos
+            vt.nor = y.nor
+            vt.uvs = y.uvs
+            vt.wght = z
+            binds[idz] = vt
+    riggedBuff.append(binds)
 
-        binds = {}
-
-        vtnr = sc2m.VM.WeightTable.BufferScaleVertex()
-        vtnr.Position = applyTransform(y.pos,0,mdl.boneInfo)
-        vtnr.Normal = applyTransform_norm(y.nor,0,mdl.boneInfo)
-        staticBuffPOSNOR.append(vtnr)
-
-        uvcl = sc2m.VM.WeightTable.BufferColorUV()
-        uvcl.UV = y.uvs
-        staticBuffUVSCOL.append(uvcl)
-        
-        for idz,z in y.bns.items():
-             vt = VXTProto()
-             vt.pos = y.pos
-             vt.nor = y.nor
-             vt.uvs = y.uvs
-             vt.wght = z
-             binds[idz] = vt
-        riggedBuff.append(binds)
+mdl.wgtTbl.VertexBuff0 = staticBuffUVSCOL
+mdl.wgtTbl.VertexBuff1 = staticBuffPOSNOR
+mdl.wgtTbl.VertexBuff2 = staticBuffPOSNOR
 
 mdl.matrix_table = mdl.matrix_table[:1]
 mdl.materials = mdl.materials[:1]
 mdl.materials[0].TextureIdx0 = 0
 mdl.materials[0].TextureIdx1 = None
 mdl.materials[0].TextureIdx2 = None
+material_base = copy.deepcopy(mdl.materials[0])
+material_base.TextureMap1 = None
+mdl.materials = []
 mdl.Object_0 = []
 mdl.Object_1 = []
 mdl.Object_2 = []
 
-newlayer = sc2m.VM.LayerObjectEntryXbox()
-newlayer.Mesh = mesh
-newlayer.ObjectType = 4
-newlayer.PrimitiveType = 1
-mdl.Object_0.append(newlayer)
+txIndx = 0
+for xx,idx in inModel.mesh_original.items():
+    x:smd_lib.SMD.MVXT = idx
+    mesh = x.poly(inModel.merged_list)
+    newlayer = sc2m.VM.LayerObjectEntryXbox()
+    newlayer.Mesh = mesh
+    newlayer.ObjectType = 4
+    newlayer.PrimitiveType = 1
+    mat = copy.deepcopy(material_base)
+    mdl.materials.append(mat)
+    newlayer.MaterialIndex = txIndx
+    txIndx += 1
+    mdl.Object_0.append(newlayer)
 
-mdl.wgtTbl.VertexBuff0 = staticBuffUVSCOL
-mdl.wgtTbl.VertexBuff1 = staticBuffPOSNOR
-mdl.wgtTbl.VertexBuff2 = staticBuffPOSNOR
+
 
 boneindx = {}
 for x in mdl.boneInfo:

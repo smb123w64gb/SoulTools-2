@@ -1,6 +1,6 @@
 import model_fmt_sc2,sys,copy
 
-import math,mathutils
+import math
 
 def euler_to_degrees(roll, pitch, yaw):
   roll_deg = math.degrees(roll)

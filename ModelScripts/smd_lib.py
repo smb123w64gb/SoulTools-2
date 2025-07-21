@@ -34,22 +34,20 @@ class SMD(object):
         def add(self,in_vxts):
             self.keys[in_vxts.hash] = in_vxts
             self.idxs.append(in_vxts.hash)
-        def sort(self):
-            sortkey = sorted(self.keys.items(), key=lambda kez: len(kez[1].bns))
-            self.keys = dict(sortkey)
-            
-            
-            
-        def poly(self):
+        
+        def poly(self,merge):
             poly_out = []
-            listy = list(self.keys)
+            listy = list(merge)
             for x in self.idxs:
                 poly_out.append(listy.index(x))
             return poly_out
-            
     def __init__(self):
+        self.merged_list = {}
         self.mesh_original = {}
         self.bones = []
+    def sort(self):
+            sortkey = sorted(self.merged_list.items(), key=lambda kez: len(kez[1].bns))
+            self.merged_list = dict(sortkey)
     def read(self,f):
         mode = 0
         dict_entry_name = ""
@@ -77,3 +75,5 @@ class SMD(object):
                 mode = 1
             if(x.find("triangles")==0):
                 mode = 2
+        for xx,idx in self.mesh_original.items():
+            self.merged_list.update(idx.keys)
