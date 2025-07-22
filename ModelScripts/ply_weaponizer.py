@@ -89,7 +89,7 @@ for y in files:
         if(x.find('end_header')==0):
             start_read = True
     ply_mdls.append(mdl_txt)
-bone_idxes_fixup = [0,0,1,1,2,2,3,3,4,5,5,6,6]
+bone_idxes_fixup = [0,0,1,2,3,6,7]
 
 def applyTransform(vertex,bone_idx,bonez):
     next_bone = bone_idx

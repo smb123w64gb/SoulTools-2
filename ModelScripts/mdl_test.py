@@ -10,7 +10,7 @@ mdl.read(mdl_file)
 mdl_file.close()
 
 idxfix = [0,1,2,1,3,4]
-for x in len(mdl.materials):
+for x in range(len(mdl.materials)):
     mdl.materials[x].TextureIdx0 = idxfix[x]
 
 

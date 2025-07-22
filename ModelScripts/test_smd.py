@@ -222,7 +222,7 @@ for x in finalPosWgt:
     flatbuffer.append(buf)
 mdl.wgtTbl.VertCounts = totalry
 mdl.wgtTbl.WeightBuffer = flatbuffer
-
+mdl.header.WeightTableCount = 1
 
 mdl_file = open(sys.argv[3], "wb")
 
