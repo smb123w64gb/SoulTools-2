@@ -1,6 +1,6 @@
 #For testing purpuses to get a rig from a model to static mesh to
 
-import model_fmt_sc2,sys
+from library import model_fmt_sc2,sys
 
 mdl_file = open(sys.argv[1], "rb")
 

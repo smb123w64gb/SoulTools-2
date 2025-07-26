@@ -1,5 +1,5 @@
 import sys
-import model_fmt_sc2
+from library import model_fmt_sc2
 import copy
 import os
 import mathutils
@@ -89,7 +89,7 @@ for y in files:
         if(x.find('end_header')==0):
             start_read = True
     ply_mdls.append(mdl_txt)
-bone_idxes_fixup = [0,0,1,2,3,6,7]
+bone_idxes_fixup = [3,1,12,13,14,15,17,18,19,5,6,7,9,10,11,112,110]
 
 def applyTransform(vertex,bone_idx,bonez):
     next_bone = bone_idx
@@ -153,17 +153,22 @@ cloned_matrix = copy.deepcopy(mdl.matrix_table[0])
 
 new_matrixes = []
 
-for idx,x in enumerate(mdl.boneInfo):
+for x in mdl.boneInfo:
     if(len(x.Name)>0):
         clean = copy.copy(cloned_matrix)
         clean.Type = 2
-        clean.ParentBoneIdx = idx
+        clean.ParentBoneIdx = x.BoneIdx
         new_matrixes.append(clean)
 
 mdl.matrix_table = new_matrixes
 
 
-
+newmat = copy.deepcopy(mdl.materials[0])
+newmat.TextureIdx0 = 0
+newmat.TextureIdx1 = None
+newmat.TextureIdx2 = None
+mdl.materials[0] = newmat
+mdl.materials = mdl.materials[:1]
 
 mdl.Object_0 = []
 mdl.Object_1 = []
@@ -172,6 +177,9 @@ mdl.wgtTbl = mdl.WeightTable()
 mdl.header.WeightTableCount = 0
 for idx,x in enumerate(ply_mdls):
     mdl_lay = x.toVMX()
+    for y in mdl_lay.StaticVerts:
+        y.Position = applyTransform(y.Position,bone_idxes_fixup[idx],mdl.boneInfo)
+        y.Normal = applyTransform_norm(y.Normal,bone_idxes_fixup[idx],mdl.boneInfo)
     mdl_lay.MaterailIndex = 0
     mdl_lay.MatrixIndex = bone_idxes_fixup[idx]
     mdl.Object_0.append(mdl_lay)

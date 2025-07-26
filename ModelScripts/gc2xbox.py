@@ -1,4 +1,4 @@
-import model_fmt_sc2
+from library import model_fmt_sc2
 import sys
 import struct
 

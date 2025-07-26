@@ -1,6 +1,6 @@
 import sys
-import smd_lib
-import model_fmt_sc2 as sc2m
+from library import smd_lib
+from library import model_fmt_sc2 as sc2m
 import mathutils
 import copy
 

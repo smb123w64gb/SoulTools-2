@@ -1,5 +1,5 @@
 import sys
-import model_fmt_sc2
+from library import model_fmt_sc2
 import copy
 
 host = open(sys.argv[1], "rb")
