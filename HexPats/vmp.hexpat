@@ -20,7 +20,7 @@ struct Header{
     u16 Object1Count;
     u16 BoneCount;
     u32 Unk0C;
-    padding[16];
+    //padding[16]; //SC3 Specal
     u32 BoneOffset;
     u32 tex_file_addr;
     u32 Object1Offset;
@@ -60,6 +60,7 @@ struct VMP{
 Header HDR;
 u32 ObjectOffset[HDR.Object1Count];
 boneInfo Bones[HDR.BoneCount] @ HDR.BoneOffset;
+u8 texture[HDR.BoneHeaderOffset - HDR.tex_file_addr] @ HDR.tex_file_addr;
 };
 
 VMP model @ 0;
