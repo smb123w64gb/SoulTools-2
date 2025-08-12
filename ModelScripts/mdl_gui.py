@@ -98,6 +98,8 @@ tN = 'Soul Calibur II VM_ Tool'
 root.geometry("640x480")
 VMtest = sc2m.VM()
 
+
+
 def tmp():
     pass
 def fl_open():
@@ -116,6 +118,8 @@ def fl_open():
         print(f"Selected file: {file_path}")
         root.title(tN+' File:'+file_path)
         f = open(file_path,'rb')
+        global VMtest
+        VMtest = sc2m.VM()
         VMtest.read(f)
         f.close()
         cred = VMtest.credits
@@ -131,7 +135,7 @@ def fl_open():
         CreditName.delete(1.0,END) 
         CreditName.insert(1.0, VMtest.credits.name)
         CreditName.configure(state="disabled")
-
+        update_matList()
         
     else:
         print("No file selected.")
@@ -284,6 +288,12 @@ def import_smd():
         VMtest.wgtTbl.VertCounts = totalry
         VMtest.wgtTbl.WeightBuffer = flatbuffer
         VMtest.header.WeightTableCount = 1
+        update_matList()
+
+def update_matList():
+    material_list.delete(0,END)
+    for x in range(len(VMtest.materials)):
+        material_list.insert(END,str("Mat %02i"%x))
 
 menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
@@ -301,22 +311,41 @@ root.config(menu=menubar)
 Button(text="Open VM_", command=fl_open).grid(row=0, column=0, padx=10, pady=5)
 Button(text="Import SMD", command=import_smd).grid(row=1, column=0, padx=10, pady=5)
 
+creddt_reg = Frame(root)
+creddt_reg.grid(row=0, column=1)
 
-dt = Label(root, text="Date of Creation")  
-dt.grid(row=0, column=2, padx=10, pady=5) 
+credn_reg = Frame(root)
+credn_reg.grid(row=1, column=1)
 
-cr = Label(root, text="Created By")  
-cr.grid(row=1, column=2, padx=10, pady=5) 
+dt = Label(creddt_reg, text="Date Created")  
+dt.grid(row=0, column=3, padx=10, pady=5) 
 
-CreditDate = Text(root, height=1, borderwidth=0,width=20) 
+cr = Label(credn_reg, text="Created By  ")  
+cr.grid(row=1, column=3, padx=10, pady=5) 
+
+CreditDate = Text(creddt_reg, height=1, borderwidth=0,width=20) 
 CreditDate.insert(1.0, "")
 CreditDate.grid(row=0, column=1, padx=5, pady=5)
 CreditDate.configure(state="disabled")
 
-CreditName = Text(root, height=1, borderwidth=0,width=20) 
+CreditName = Text(credn_reg, height=1, borderwidth=0,width=20) 
 CreditName.insert(1.0, "")
 CreditName.grid(row=1, column=1, padx=5, pady=5) 
 CreditName.configure(state="disabled")
+
+
+mat_lst_frame = Frame(root)
+mat_lst_frame.grid(row=2, column=0)
+
+cr = Label(mat_lst_frame, text="Materials")  
+cr.grid(row=0, column=0, padx=10, pady=5) 
+
+material_list = Listbox(mat_lst_frame)
+material_list.grid(row=1, column=0)
+scrollbar = Scrollbar(mat_lst_frame, orient=VERTICAL)
+scrollbar.grid(row=1, column=1, sticky="ns")
+material_list.config(yscrollcommand = scrollbar.set)
+scrollbar.config(command = material_list.yview)
 
 
 
