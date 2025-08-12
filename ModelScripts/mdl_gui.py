@@ -1,10 +1,102 @@
 from tkinter import *
 from tkinter import filedialog
-from library import model_fmt_sc2
+from library import model_fmt_sc2 as sc2m
+from library import smd_lib
+import mathutils
+import math
+import copy
+
+
+class VXTProto(object):
+        def __init__(self):
+            self.pos = [0.0]*3
+            self.nor = [0.0]*3
+            self.uvs = [0.0]*2
+            self.wght = 1.0 
+        def __str__(self):
+             rt = ''
+             rt += str("POS:%f,%f,%f\n"%(self.pos[0],self.pos[1],self.pos[2]))
+             rt += str("NOR:%f,%f,%f\n"%(self.nor[0],self.nor[1],self.nor[2]))
+             rt += str("UVS:%f,%f\n"%(self.uvs[0],self.uvs[1]))
+             rt += str("WGT:%f\n"%(self.wght))
+             return rt
+        def __repr__(self):
+             return self.__str__()
+def euler_to_degrees(roll, pitch, yaw):
+    roll_deg = float(roll) * 360.0
+    pitch_deg = float(pitch)* 360.0
+    yaw_deg = float(yaw)* 360.0
+    return roll_deg, pitch_deg, yaw_deg
+
+def degrees_to_radians(roll, pitch, yaw):
+    roll_rad = float(roll) * (math.pi / 180.0)
+    pitch_rad = float(pitch) * (math.pi / 180.0)
+    yaw_rad = float(yaw) * (math.pi / 180.0)
+    return roll_rad, pitch_rad, yaw_rad
+
+def radians_to_degrees(roll, pitch, yaw):
+    roll_rad = 180.0 * float(roll) / (math.pi)
+    pitch_rad = 180.0 * float(pitch) / (math.pi)
+    yaw_rad = 180.0 * float(yaw) / (math.pi)
+    return roll_rad, pitch_rad, yaw_rad
+
+def applyTransform(vertex,bone_idx,bonez):
+    next_bone = bone_idx
+    transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
+    chain = []
+    while(next_bone != 255):
+        bon = bonez[next_bone]
+        
+        chain.append(next_bone)
+        next_bone = bon.BoneParentIdx
+    chain.reverse()
+    for x in chain:
+        bon = bonez[x]
+        
+        d = euler_to_degrees(bon.Rotation[0],bon.Rotation[1],bon.Rotation[2])
+        e = degrees_to_radians(d[0],d[1],d[2])
+        e = [x for x in e]
+        r = mathutils.Euler((e[0],e[1],e[2]))
+        r = r.to_matrix()
+        r.invert()
+        
+        tra = mathutils.Vector((-bon.StartPositionXYZScale[0],-bon.StartPositionXYZScale[1],-bon.StartPositionXYZScale[2]))
+        transforms = transforms + tra
+        transforms.rotate(r)
+        
+    loc = transforms
+    return (loc[0],loc[1],loc[2])
+def applyTransform_norm(vertex,bone_idx,bonez):
+    next_bone = bone_idx
+    transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
+    chain = []
+    while(next_bone != 255):
+        bon = bonez[next_bone]
+        
+        chain.append(next_bone)
+        next_bone = bon.BoneParentIdx
+    chain.reverse()
+    for x in chain:
+        bon = bonez[x]
+        
+        d = euler_to_degrees(bon.Rotation[0],bon.Rotation[1],bon.Rotation[2])
+        e = degrees_to_radians(d[0],d[1],d[2])
+        e = [x for x in e]
+        r = mathutils.Euler((e[0],e[1],e[2]))
+        r = r.to_matrix()
+        r.invert()
+        transforms.rotate(r)
+        
+    loc = transforms
+    return (loc[0],loc[1],loc[2])
+
+
 
 root = Tk()
+tN = 'Soul Calibur II VM_ Tool'
 
-VMtest = model_fmt_sc2.VM()
+root.geometry("640x480")
+VMtest = sc2m.VM()
 
 def tmp():
     pass
@@ -22,11 +114,25 @@ def fl_open():
     )
     if file_path:
         print(f"Selected file: {file_path}")
-        lbl.config(text=file_path)
+        root.title(tN+' File:'+file_path)
         f = open(file_path,'rb')
         VMtest.read(f)
-        lbl2.config(text=VMtest.boneInfo[0].Name)
         f.close()
+        cred = VMtest.credits
+
+        usDateTime = f"{cred.month}/{cred.day}/{cred.year} {cred.hour}:{cred.min}:{cred.sec}"
+
+        CreditDate.configure(state="normal")
+        CreditDate.delete(1.0,END) 
+        CreditDate.insert(1.0, usDateTime)
+        CreditDate.configure(state="disabled")
+
+        CreditName.configure(state="normal")
+        CreditName.delete(1.0,END) 
+        CreditName.insert(1.0, VMtest.credits.name)
+        CreditName.configure(state="disabled")
+
+        
     else:
         print("No file selected.")
 def fl_save():
@@ -48,6 +154,137 @@ def fl_save():
     else:
         print("No file selected.")
 
+def import_smd():
+    file_types = [
+    ("StudioModel Data", "*.smd"),
+    ("All files", "*.*")
+    ]
+    # Open the file dialog with filters
+    file_path = filedialog.askopenfilename(
+    title="Select a file",
+    filetypes=file_types
+    )
+    if file_path:
+        f = open(file_path,'r')
+        inModel = smd_lib.SMD()
+        inModel.read(f)
+        inModel.sort()
+        mesh = []
+        riggedBuff = []
+        staticBuffPOSNOR = []
+        staticBuffUVSCOL = []
+        for idy,y in inModel.merged_list.items():
+            binds = {}
+            vtnr = sc2m.VM.WeightTable.BufferScaleVertex()
+            vtnr.Position = applyTransform(y.pos,0,VMtest.boneInfo)
+            vtnr.Normal = applyTransform_norm(y.nor,0,VMtest.boneInfo)
+            staticBuffPOSNOR.append(vtnr)
+
+            uvcl = sc2m.VM.WeightTable.BufferColorUV()
+            uvcl.UV = y.uvs
+            staticBuffUVSCOL.append(uvcl)
+            
+            for idz,z in y.bns.items():
+                    vt = VXTProto()
+                    vt.pos = y.pos
+                    vt.nor = y.nor
+                    vt.uvs = y.uvs
+                    vt.wght = z
+                    binds[idz] = vt
+            riggedBuff.append(binds)
+
+        VMtest.wgtTbl.VertexBuff0 = staticBuffUVSCOL
+        VMtest.wgtTbl.VertexBuff1 = staticBuffPOSNOR
+        VMtest.wgtTbl.VertexBuff2 = staticBuffPOSNOR
+
+        VMtest.matrix_table = VMtest.matrix_table[:1]
+        VMtest.materials = VMtest.materials[:1]
+        VMtest.materials[0].TextureIdx0 = 0
+        VMtest.materials[0].TextureIdx1 = None
+        VMtest.materials[0].TextureIdx2 = None
+        material_base = copy.deepcopy(VMtest.materials[0])
+        material_base.TextureMap1 = None
+        VMtest.materials = []
+        VMtest.Object_0 = []
+        VMtest.Object_1 = []
+        VMtest.Object_2 = []
+
+        txIndx = 0
+        for xx,idx in inModel.mesh_original.items():
+            x:smd_lib.SMD.MVXT = idx
+            mesh = x.poly(inModel.merged_list)
+            newlayer = sc2m.VM.LayerObjectEntryXbox()
+            newlayer.Mesh = mesh
+            newlayer.ObjectType = 4
+            newlayer.PrimitiveType = 1
+            mat = copy.deepcopy(material_base)
+            VMtest.materials.append(mat)
+            newlayer.MaterialIndex = txIndx
+            txIndx += 1
+            VMtest.Object_0.append(newlayer)
+
+
+
+        boneindx = {}
+        for x in VMtest.boneInfo:
+            if(x.BoneNameOffset>0):
+                boneindx[x.Name] = x
+
+
+        finalPosWgt = []
+        curhigh = 1
+        topfour = 4
+        curIdx = 0
+        wgtz = []
+        weghtsub = []
+        for xx in riggedBuff:
+            if(len(xx)>topfour):
+                #BindCOunt / CurVtx / SubVertex
+                finalPosWgt[-1][-1][-1].stat = 1
+                topfour += 1
+            elif(curhigh<len(xx)):
+                if(curhigh==4):
+                    pass
+                else:
+                    if(len(weghtsub)):
+                        finalPosWgt.append(weghtsub)
+                    weghtsub = []
+                    curhigh += 1
+            wgtz = []
+            for idx,x in xx.items():
+                
+                bone = boneindx[idx]
+                updatedPos = applyTransform(x.pos,bone.BoneIdx,VMtest.boneInfo)
+                updatedNor = applyTransform_norm(x.nor,bone.BoneIdx,VMtest.boneInfo)
+                if(len(xx)>1):
+                    updatedPos = [(updatedPos[0]*x.wght),(updatedPos[1]*x.wght),(updatedPos[2]*x.wght)]
+                wgt = sc2m.VM.WeightTable.WeightDef()
+                wgt.Pos = updatedPos
+                wgt.Nor = updatedNor
+                wgt.bWgt = x.wght
+                wgt.bIdx = bone.BoneIdx
+                wgtz.append(wgt)
+            weghtsub.append(wgtz)
+        finalPosWgt.append(weghtsub)
+        if(curhigh==4):
+            finalPosWgt[-1][-1][-1].stat = 4
+
+
+        flatbuffer = []
+        totalry = [0,0,0,0]
+        idx = 0
+        for x in finalPosWgt:
+            buf = []
+            for y in x:
+                totalry[idx] += 1
+                for z in y:
+                    buf.append(z)
+            idx+=1
+            flatbuffer.append(buf)
+        VMtest.wgtTbl.VertCounts = totalry
+        VMtest.wgtTbl.WeightBuffer = flatbuffer
+        VMtest.header.WeightTableCount = 1
+
 menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
 filemenu.add_command(label="Open", command=fl_open)
@@ -61,12 +298,27 @@ menubar.add_cascade(label="File", menu=filemenu)
 
 root.config(menu=menubar)
 
-lbl = Label(root, text=" ")  
-lbl.pack()  
-lbl2 = Label(root, text=" ")  
-lbl2.pack()  
+Button(text="Open VM_", command=fl_open).grid(row=0, column=0, padx=10, pady=5)
+Button(text="Import SMD", command=import_smd).grid(row=1, column=0, padx=10, pady=5)
 
-Button(text="Import SMD", command=tmp).pack()
+
+dt = Label(root, text="Date of Creation")  
+dt.grid(row=0, column=2, padx=10, pady=5) 
+
+cr = Label(root, text="Created By")  
+cr.grid(row=1, column=2, padx=10, pady=5) 
+
+CreditDate = Text(root, height=1, borderwidth=0,width=20) 
+CreditDate.insert(1.0, "")
+CreditDate.grid(row=0, column=1, padx=5, pady=5)
+CreditDate.configure(state="disabled")
+
+CreditName = Text(root, height=1, borderwidth=0,width=20) 
+CreditName.insert(1.0, "")
+CreditName.grid(row=1, column=1, padx=5, pady=5) 
+CreditName.configure(state="disabled")
+
+
 
 
 

@@ -352,6 +352,26 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             rt += str("BoneInfo count %i @ %s\n"%(self.BoneInfo['count'],hex(self.BoneInfo['offset'])))
             rt += str("MaterialsInfo count %i @ %s\n"%(self.MaterialsInfo['count'],hex(self.MaterialsInfo['offset'])))
             return rt
+    class Credit(object):
+        def __init__(self):
+            self.day = 0
+            self.month = 0
+            self.year = 0
+            self.sec = 0
+            self.min = 0
+            self.hour = 0
+            self.name = ''
+        def read(self,f):
+            self.day = f.u8()
+            self.month = f.u8()
+            self.year = f.u16()
+
+            self.sec = f.u8()
+            self.min = f.u8()
+            self.hour = f.u8()
+            f.u8()
+            precrd = f.read(0x20)
+            self.name = precrd.decode('shift_jis')
     class Material(object):
         class MaterialMap(object):
             def __init__(self):
@@ -1105,6 +1125,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.Object_2 = []
         self.texture = b''
         self.unkArray = b'\x00'*40
+        self.credits = self.Credit()
         self.textureOffset = 0
         self.materixOffset = 0
         self.materialOffset = 0
@@ -1116,7 +1137,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
         self.f.seek(self.textureOffset)
         self.texture = self.f.read(textureSize)
         self.f.seek(self.header.BoneHeaderOffset)
+        aeu = f.tell()
         self.unkArray = f.read(40)
+        f.seek(aeu)
+        self.credits.read(self.f)
         self.f.seek(self.header.ukn_MatrixTableOffset)
         self.unkMtx.read(self.f)
 
