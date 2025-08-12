@@ -294,6 +294,16 @@ def update_matList():
     material_list.delete(0,END)
     for x in range(len(VMtest.materials)):
         material_list.insert(END,str("Mat %02i"%x))
+def get_material(event):
+    selected = material_list.curselection()
+    if selected: # If item is selected
+        print("Selected Item : ",selected[0]) # print the selected item
+def enable_texture():
+    for idx,x in enumerate(matstate):
+        if(x.get()):
+            matindx[idx].config(state=NORMAL)
+        else:
+            matindx[idx].config(state=DISABLED)
 
 menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
@@ -341,11 +351,26 @@ cr = Label(mat_lst_frame, text="Materials")
 cr.grid(row=0, column=0, padx=10, pady=5) 
 
 material_list = Listbox(mat_lst_frame)
+material_list.bind('<<ListboxSelect>>',get_material)
 material_list.grid(row=1, column=0)
 scrollbar = Scrollbar(mat_lst_frame, orient=VERTICAL)
 scrollbar.grid(row=1, column=1, sticky="ns")
 material_list.config(yscrollcommand = scrollbar.set)
 scrollbar.config(command = material_list.yview)
+
+mat_detail_frm = Frame(root)
+mat_detail_frm.grid(row=2, column=1)
+
+matstate = [BooleanVar(value=False),BooleanVar(value=False),BooleanVar(value=False)]
+matendx = []
+matindx = []
+for x in range(3):
+    matendx.append(Checkbutton(mat_detail_frm, text=str("Texture Bind %i"%x),variable=matstate[x],command=enable_texture))
+    matendx[x].grid(row=x, column=0)
+    matindx.append(Spinbox(mat_detail_frm, from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100))
+    matindx[x].grid(row=x, column=1)
+    matindx[x].config(state=DISABLED)
+
 
 
 
