@@ -297,6 +297,11 @@ def update_matList():
 def get_material(event):
     selected = material_list.curselection()
     if selected: # If item is selected
+        
+        mat:sc2m.VM.Material = VMtest.materials[selected[0]]
+        if(mat.TextureIdx0 is None):
+            
+
         print("Selected Item : ",selected[0]) # print the selected item
 def enable_texture():
     for idx,x in enumerate(matstate):
@@ -362,12 +367,13 @@ mat_detail_frm = Frame(root)
 mat_detail_frm.grid(row=2, column=1)
 
 matstate = [BooleanVar(value=False),BooleanVar(value=False),BooleanVar(value=False)]
+matindex = [IntVar(value=0),IntVar(value=0),IntVar(value=0)]
 matendx = []
 matindx = []
 for x in range(3):
     matendx.append(Checkbutton(mat_detail_frm, text=str("Texture Bind %i"%x),variable=matstate[x],command=enable_texture))
     matendx[x].grid(row=x, column=0)
-    matindx.append(Spinbox(mat_detail_frm, from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100))
+    matindx.append(Spinbox(mat_detail_frm,textvariable=matindex[x], from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100))
     matindx[x].grid(row=x, column=1)
     matindx[x].config(state=DISABLED)
 
