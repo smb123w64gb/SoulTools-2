@@ -325,7 +325,7 @@ def get_material(event=None):
             matindex[2].set(mat.TextureIdx2)
 
         print("Selected Item : ",selected[0]) # print the selected item
-def enable_texture():
+def update_texture():
     selected = material_list.curselection()
     global VMtest
     mat:sc2m.VM.Material = VMtest.materials[selected[0]]
@@ -348,6 +348,15 @@ def enable_texture():
                     mat.TextureIdx1 = None
                 case 2:
                     mat.TextureIdx2 = None
+    for idx,x in enumerate(matindex):
+            if(matstate[idx].get()):
+                match idx:
+                    case 0:
+                        mat.TextureIdx0 = int(x.get())
+                    case 1:
+                        mat.TextureIdx1 = int(x.get())
+                    case 2:
+                        mat.TextureIdx2 = int(x.get())
     get_material()
 
 menubar = Menu(root)
@@ -411,9 +420,9 @@ matindex = [IntVar(value=0),IntVar(value=0),IntVar(value=0)]
 matendx = []
 matindx = []
 for x in range(3):
-    matendx.append(Checkbutton(mat_detail_frm, text=str("Texture Bind %i"%x),variable=matstate[x],command=enable_texture))
+    matendx.append(Checkbutton(mat_detail_frm, text=str("Texture Bind %i"%x),variable=matstate[x],command=update_texture))
     matendx[x].grid(row=x, column=0)
-    matindx.append(Spinbox(mat_detail_frm,textvariable=matindex[x], from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100))
+    matindx.append(Spinbox(mat_detail_frm,textvariable=matindex[x], from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture))
     matindx[x].grid(row=x, column=1)
     matindx[x].config(state=DISABLED)
 
