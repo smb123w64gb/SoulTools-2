@@ -1317,7 +1317,8 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                     x.FaceOffset = head
                     x.FaceCount = len(x.Mesh)
                     head += len(x.Mesh)*2
-        
+        if(head % 0x10):
+            head += 0x10 - (head % 0x10)
         for x in self.Object_0:
             x.materixOffset = self.materixOffset
             x.materialOffset = self.materialOffset
@@ -1463,6 +1464,10 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                             f.u8(0)
                     for y in x.Mesh:
                         f.u16(y)
+            alighnment = f.tell() % 0x10
+            if(alighnment):
+                for y in range(0x10-alighnment):
+                    f.u8(0)
         for x in self.Object_0:
             if x.ObjectType == 0:
                 alighnment = f.tell() % 0x10
