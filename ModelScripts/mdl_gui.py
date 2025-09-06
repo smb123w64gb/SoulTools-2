@@ -50,6 +50,7 @@ def applyTransform(vertex,bone_idx,bonez):
         chain.append(next_bone)
         next_bone = bon.BoneParentIdx
     chain.reverse()
+    onceler = True
     for x in chain:
         bon = bonez[x]
         
@@ -58,6 +59,12 @@ def applyTransform(vertex,bone_idx,bonez):
         e = [x for x in e]
         r = mathutils.Euler((e[0],e[1],e[2]))
         r = r.to_matrix()
+        if(bon.boneType == 3 and onceler):
+            mat_rotY = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Y')
+            mat_rotZ = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Z')
+            mat_rotate = (mat_rotY @ mat_rotZ)
+            onceler = False
+            r.rotate(mat_rotate)
         r.invert()
         
         tra = mathutils.Vector((-bon.StartPositionXYZScale[0],-bon.StartPositionXYZScale[1],-bon.StartPositionXYZScale[2]))
@@ -76,6 +83,7 @@ def applyTransform_norm(vertex,bone_idx,bonez):
         chain.append(next_bone)
         next_bone = bon.BoneParentIdx
     chain.reverse()
+    onceler = True
     for x in chain:
         bon = bonez[x]
         
@@ -84,6 +92,12 @@ def applyTransform_norm(vertex,bone_idx,bonez):
         e = [x for x in e]
         r = mathutils.Euler((e[0],e[1],e[2]))
         r = r.to_matrix()
+        if(bon.boneType == 3 and onceler):
+            mat_rotY = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Y')
+            mat_rotZ = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Z')
+            mat_rotate = (mat_rotY @ mat_rotZ)
+            onceler = False
+            r.rotate(mat_rotate)
         r.invert()
         transforms.rotate(r)
         
