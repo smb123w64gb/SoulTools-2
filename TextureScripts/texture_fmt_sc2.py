@@ -264,6 +264,8 @@ class VTX(object):
         for x in self.textures:
             x.DataOffset = Head
             Head += len(x.Data)
+            if(Head % 0x100):#Also alignment
+                Head += 0x100 - (Head % 0x100)
     def write(self,f):
         self.recalc() #Good idea so we know everything is squared up
         self.header.write(f)
@@ -285,6 +287,10 @@ class VTX(object):
                 w8(f,0)#Seeking wont write null so we do it
         for x in self.textures:
             f.write(x.Data)
+            misAlignment =  f.tell() % 0x100
+            if(misAlignment):
+                for x in range(0x100 - misAlignment):
+                    w8(f,0)#Seeking wont write null so we do it
     def addTexture(self,w,h,data,mipCount,format,pallet = None):
         newTex = self.Texture()
         newTex.Width = w
