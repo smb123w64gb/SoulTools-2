@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import filedialog
+from tkinter import ttk
 from library import model_fmt_sc2 as sc2m
 from library import smd_lib
 import mathutils
@@ -411,9 +412,24 @@ CreditName.insert(1.0, "")
 CreditName.grid(row=1, column=1, padx=5, pady=5) 
 CreditName.configure(state="disabled")
 
+mesh_lst_frame = Frame(root)
+mesh_lst_frame.grid(row=2, column=0)
+meshview = ttk.Treeview(mesh_lst_frame)
+mesh_scrollbar = Scrollbar(mesh_lst_frame, orient=VERTICAL)
+mesh_scrollbar.grid(row=0, column=1, sticky="ns")
+meshview.config(yscrollcommand = mesh_scrollbar.set)
+mesh_scrollbar.config(command = meshview.yview)
+diffuselst = meshview.insert("", END, text="Diffuse(Layer 0)")
+d_list = []
+for x in range(18):
+    d_list.append(meshview.insert(diffuselst, END, text=str("Mesh_%02i"%x)))
+overlaylst = meshview.insert("", END, text="Overlay(Layer 1)")
+alphalst = meshview.insert("", END, text="Alpha(Layer 2)")
+meshview.grid(row=0,column=0)
+
 
 mat_lst_frame = Frame(root)
-mat_lst_frame.grid(row=2, column=0)
+mat_lst_frame.grid(row=2, column=1)
 
 cr = Label(mat_lst_frame, text="Materials")  
 cr.grid(row=0, column=0, padx=10, pady=5) 
@@ -421,13 +437,13 @@ cr.grid(row=0, column=0, padx=10, pady=5)
 material_list = Listbox(mat_lst_frame)
 material_list.bind('<<ListboxSelect>>',get_material)
 material_list.grid(row=1, column=0)
-scrollbar = Scrollbar(mat_lst_frame, orient=VERTICAL)
-scrollbar.grid(row=1, column=1, sticky="ns")
-material_list.config(yscrollcommand = scrollbar.set)
-scrollbar.config(command = material_list.yview)
+mat_scrollbar = Scrollbar(mat_lst_frame, orient=VERTICAL)
+mat_scrollbar.grid(row=1, column=1, sticky="ns")
+material_list.config(yscrollcommand = mat_scrollbar.set)
+mat_scrollbar.config(command = material_list.yview)
 
 mat_detail_frm = Frame(root)
-mat_detail_frm.grid(row=2, column=1)
+mat_detail_frm.grid(row=2, column=2)
 
 matstate = [BooleanVar(value=False),BooleanVar(value=False),BooleanVar(value=False)]
 matindex = [IntVar(value=0),IntVar(value=0),IntVar(value=0)]
