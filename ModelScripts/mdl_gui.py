@@ -310,10 +310,12 @@ def update_matList():
     for x in range(len(VMtest.materials)):
         material_list.insert(END,str("Mat %02i"%x))
 def get_material(event=None):
+    global VMtest
     selected = material_list.curselection()
     if selected: # If item is selected
-        
         mat:sc2m.VM.Material = VMtest.materials[selected[0]]
+        material_type.set(mat.Type)
+        alpha_source.set(mat.OpacitySrc)
         if(mat.TextureIdx0 is None):
             matstate[0].set(False)
             matindx[0].config(state=DISABLED)
@@ -429,10 +431,10 @@ meshview.grid(row=0,column=0)
 
 
 mat_lst_frame = Frame(root)
-mat_lst_frame.grid(row=2, column=1)
+mat_lst_frame.grid(row=2, column=1, padx=0, pady=0)
 
 cr = Label(mat_lst_frame, text="Materials")  
-cr.grid(row=0, column=0, padx=10, pady=5) 
+cr.grid(row=0, column=0, padx=0, pady=0) 
 
 material_list = Listbox(mat_lst_frame)
 material_list.bind('<<ListboxSelect>>',get_material)
@@ -442,18 +444,26 @@ mat_scrollbar.grid(row=1, column=1, sticky="ns")
 material_list.config(yscrollcommand = mat_scrollbar.set)
 mat_scrollbar.config(command = material_list.yview)
 
-mat_detail_frm = Frame(root)
-mat_detail_frm.grid(row=2, column=2)
+mat_detail_frm = Frame(mat_lst_frame)
+mat_detail_frm.grid(row=1, column=2)
 
 matstate = [BooleanVar(value=False),BooleanVar(value=False),BooleanVar(value=False)]
 matindex = [IntVar(value=0),IntVar(value=0),IntVar(value=0)]
 matendx = []
 matindx = []
+Label(mat_detail_frm, text="Material Type",width=14, anchor="e").grid(row=0,column=0,padx=4,pady=2)
+material_type = IntVar(value=0)
+mat_type = Spinbox(mat_detail_frm,textvariable=material_type,text=str("Material Type"), from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture)
+mat_type.grid(row=0,column=1)
+Label(mat_detail_frm, text="Alpha Src",width=14, anchor="e").grid(row=1,column=0,padx=4,pady=2)
+alpha_source = IntVar(value=0)
+alpha_src = Spinbox(mat_detail_frm,textvariable=alpha_source,text=str("Alpha Src"), from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture)
+alpha_src.grid(row=1,column=1)
 for x in range(3):
     matendx.append(Checkbutton(mat_detail_frm, text=str("Texture Bind %i"%x),variable=matstate[x],command=update_texture))
-    matendx[x].grid(row=x, column=0)
+    matendx[x].grid(row=x+2, column=0)
     matindx.append(Spinbox(mat_detail_frm,textvariable=matindex[x], from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture))
-    matindx[x].grid(row=x, column=1)
+    matindx[x].grid(row=x+2, column=1)
     matindx[x].config(state=DISABLED)
 
 
