@@ -340,12 +340,14 @@ def get_material(event=None):
             matstate[2].set(True)
             matindx[2].config(state=NORMAL)
             matindex[2].set(mat.TextureIdx2)
-
+        print("Material type : %i" % mat.Type)
         print("Selected Item : ",selected[0]) # print the selected item
 def update_texture():
     selected = material_list.curselection()
     global VMtest
     mat:sc2m.VM.Material = VMtest.materials[selected[0]]
+    mat.Type = material_type.get()
+    mat.OpacitySrc = alpha_source.get()
     for idx,x in enumerate(matstate):
         if(x.get()):
             matindx[idx].config(state=NORMAL)
@@ -453,11 +455,11 @@ matendx = []
 matindx = []
 Label(mat_detail_frm, text="Material Type",width=14, anchor="e").grid(row=0,column=0,padx=4,pady=2)
 material_type = IntVar(value=0)
-mat_type = Spinbox(mat_detail_frm,textvariable=material_type,text=str("Material Type"), from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture)
+mat_type = Spinbox(mat_detail_frm,textvariable=material_type, from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture)
 mat_type.grid(row=0,column=1)
 Label(mat_detail_frm, text="Alpha Src",width=14, anchor="e").grid(row=1,column=0,padx=4,pady=2)
 alpha_source = IntVar(value=0)
-alpha_src = Spinbox(mat_detail_frm,textvariable=alpha_source,text=str("Alpha Src"), from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture)
+alpha_src = Spinbox(mat_detail_frm,textvariable=alpha_source, from_=0, to=255, width=6, repeatdelay=500, repeatinterval=100,command=update_texture)
 alpha_src.grid(row=1,column=1)
 for x in range(3):
     matendx.append(Checkbutton(mat_detail_frm, text=str("Texture Bind %i"%x),variable=matstate[x],command=update_texture))
