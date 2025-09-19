@@ -19,8 +19,8 @@ struct Header{
     u8 Unk07;
     u16 Object1Count;
     u16 BoneCount;
-    u32 Unk0C;
-    //padding[16]; //SC3 Specal
+    u32 VertCount;
+    padding[16]; //SC3 Specal
     u32 BoneOffset;
     u32 tex_file_addr;
     u32 Object1Offset;
@@ -43,10 +43,7 @@ struct boneInfo { // bone positions relative to its parent
     u8 BoneParentIdx;
     u8 BoneIdx; // used for name look up?
     u8 ukn_bone3;
-    //if (BoneNameOffset != 0) {
-    char Name[] @ BoneNameOffset;
-    //}
-}[[name(std::format("{}", Name))]];
+};
 struct objectLayer{
     u8 type;
     u8 count;
@@ -58,7 +55,7 @@ struct objectLayer{
 };
 struct VMP{
 Header HDR;
-u32 ObjectOffset[HDR.Object1Count];
+u32 ObjectOffset[HDR.Object1Count] @ HDR.table1_addr;
 boneInfo Bones[HDR.BoneCount] @ HDR.BoneOffset;
 u8 texture[HDR.BoneHeaderOffset - HDR.tex_file_addr] @ HDR.tex_file_addr;
 };
