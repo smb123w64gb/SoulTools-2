@@ -151,6 +151,7 @@ def fl_open():
         CreditName.insert(1.0, VMtest.credits.name)
         CreditName.configure(state="disabled")
         update_matList()
+        update_MeshMenu()
         
     else:
         print("No file selected.")
@@ -374,6 +375,68 @@ def update_texture():
                         mat.TextureIdx2 = int(x.get())
     get_material()
 
+current_mesh_selected = None
+def popup_MeshRightClick(event):
+    """action in event of button 3 on tree view"""
+    # select row under mouse
+    mesh_menu.entryconfig("Move to Diffuse", state="normal")
+    mesh_menu.entryconfig("Move to Overlay", state="normal")
+    mesh_menu.entryconfig("Move to Alpha", state="normal")
+    global current_mesh_selected
+    iid = meshview.identify_row(event.y)
+    if iid:
+        # mouse pointer over item
+        meshview.selection_set(iid)
+        curItem = iid
+        if(len(meshview.item(curItem)['tags'])>0):
+            if(meshview.item(curItem)['tags'][0] == 0):
+                mesh_menu.entryconfig("Move to Diffuse", state="disabled")
+            elif(meshview.item(curItem)['tags'][0] == 1):
+                mesh_menu.entryconfig("Move to Overlay", state="disabled")
+            elif(meshview.item(curItem)['tags'][0] == 2):
+                mesh_menu.entryconfig("Move to Alpha", state="disabled")
+            current_mesh_selected = curItem
+            mesh_menu.post(event.x_root, event.y_root)            
+    else:
+        # mouse pointer not over item
+        # occurs when items do not fill frame
+        # no action required
+        pass
+def update_MeshMenu(event=None):
+    for item in meshview.get_children():
+        meshview.delete(item)
+    diffuselst = meshview.insert("", END, text="Diffuse(Layer 0)")
+    overlaylst = meshview.insert("", END, text="Overlay(Layer 1)")
+    alphalst = meshview.insert("", END, text="Alpha(Layer 2)")
+    global VMtest
+    for idx,x in enumerate(VMtest.Object_0):
+        meshview.insert(diffuselst, END, text=str("Mesh_%02i"%idx),tags=0,values=idx)
+    for idx,x in enumerate(VMtest.Object_1):
+        meshview.insert(overlaylst, END, text=str("Mesh_%02i"%idx),tags=1,values=idx)
+    for idx,x in enumerate(VMtest.Object_2):
+        meshview.insert(alphalst, END, text=str("Mesh_%02i"%idx),tags=2,values=idx)
+def move_MeshMenu(layer_idx):
+        meshview.selection_set(current_mesh_selected)
+        curItem = current_mesh_selected
+        global VMtest
+        print(meshview.item(curItem))
+        if(meshview.item(curItem)['tags'][0]==0):
+            value_move = VMtest.Object_0.pop(meshview.item(curItem)['values'][0])
+        elif(meshview.item(curItem)['tags'][0]==1):
+            value_move = VMtest.Object_1.pop(meshview.item(curItem)['values'][0])
+        elif(meshview.item(curItem)['tags'][0]==2):
+            value_move = VMtest.Object_2.pop(meshview.item(curItem)['values'][0])
+        match layer_idx:
+            case 0:
+                VMtest.Object_0.append(value_move)
+            case 1:
+                VMtest.Object_1.append(value_move)
+            case 2:
+                VMtest.Object_2.append(value_move)
+            case _:
+                print("HOW!")
+        update_MeshMenu()
+
 menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
 filemenu.add_command(label="Open", command=fl_open)
@@ -412,17 +475,22 @@ CreditName.insert(1.0, "")
 CreditName.grid(row=1, column=1, padx=5, pady=5) 
 CreditName.configure(state="disabled")
 
+mesh_menu = Menu(root, tearoff=0)
+mesh_menu.add_command(label="Move to Diffuse", command=lambda: move_MeshMenu(0))
+mesh_menu.add_command(label="Move to Overlay", command=lambda: move_MeshMenu(1))
+mesh_menu.add_command(label="Move to Alpha", command=lambda: move_MeshMenu(2))
+
 mesh_lst_frame = Frame(root)
 mesh_lst_frame.grid(row=2, column=0)
 meshview = ttk.Treeview(mesh_lst_frame)
+meshview.heading("#0", text="Mesh Layers")
+meshview.bind("<Button-3>", popup_MeshRightClick)
+
 mesh_scrollbar = Scrollbar(mesh_lst_frame, orient=VERTICAL)
 mesh_scrollbar.grid(row=0, column=1, sticky="ns")
 meshview.config(yscrollcommand = mesh_scrollbar.set)
 mesh_scrollbar.config(command = meshview.yview)
 diffuselst = meshview.insert("", END, text="Diffuse(Layer 0)")
-d_list = []
-for x in range(18):
-    d_list.append(meshview.insert(diffuselst, END, text=str("Mesh_%02i"%x)))
 overlaylst = meshview.insert("", END, text="Overlay(Layer 1)")
 alphalst = meshview.insert("", END, text="Alpha(Layer 2)")
 meshview.grid(row=0,column=0)
