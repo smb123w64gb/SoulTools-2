@@ -1,4 +1,13 @@
 import std.mem;
+
+fn fixy(u32 a){
+    u32 rem = a % 0x10;
+    if(rem>0)
+        return a - rem;
+    else
+        return a;
+};
+
 struct dmaTable{
 u32 Tag;
 u32 EntryOffset;
@@ -139,12 +148,13 @@ struct TextureEntry{
     u32 pal[slices[1].PalletLen] @ slices[1].PalletOffset+offsetto;
 };
 struct DimentionEnt{
-    u8 stuff[0x1D];
+    u8 stuff[0x20];
     GS_TEX0 test;
-    u8 stuff2[0x1B];
+    u8 stuff2[0x18];
     };
 struct textable{
-DimentionEnt *textures : u32;
+u32 offset;
+DimentionEnt texture @ offset-(offset%0x10);
 };
 struct VPT{
 u8 byteMagic;
@@ -164,6 +174,7 @@ u32 address3;//End of file
 u32 testa3 @ offsetto+address3;
 u32 address4;//End of file
 u32 testa4 @ offsetto+address4;
+padding[8];
 //u32 address5;
 //u32 testa5 @ offsetto+address5;
 //textable *texturesAlt[textureCount] : u32;
@@ -173,6 +184,7 @@ addressTable textureInfo[trueDmaCount];
 TextureEntry textEnt[while(std::mem::read_unsigned($, 4) == 268435462)];
 //DimentionEnt dimmy[trueCountTextures];
 //Pallet pallets[textureCount];
+
 };
 //u32 offsetto @ 0x14;
 u32 offsetto = 0;
