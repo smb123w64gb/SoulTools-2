@@ -9,7 +9,7 @@ mdl = model_fmt_sc2.VM()
 mdl.read(mdl_file)
 mdl_file.close()
 
-idxfix = [23,24,10,5,2,25,13,14,1,12,8,3,4,6,6,6,9,0,7,12,20,17,21,11,15,16,16,18,19]
+idxfix = [7,21,4,26,23,13,22,6,15,3,18,6,9,17,19,12,2,11,1,5,0,11,10,20,8,24,14,25,16]
 for x in range(len(mdl.materials)):
     mdl.materials[x].TextureIdx0 = idxfix[x]
 

@@ -177,7 +177,7 @@ class VTX(object):
         def __init__(self):
             self.pallet = None
             self.palletOff = 0
-            self.flags = 9243 #need real flags later
+            self.flags = 9225 #need real flags later
             self.Unk1 = 0
             self.HeightVisible = 0
             self.WidthVisible = 0
