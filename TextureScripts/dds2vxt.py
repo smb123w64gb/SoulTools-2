@@ -8,6 +8,7 @@ newTex = texture_fmt_sc2.VTX()
 
 files = os.listdir(sys.argv[1])
 files = [ fi for fi in files if fi.lower().endswith(".dds") ]
+files.reverse()
 for x in files:
     dds = open(sys.argv[1] + '\\' + x, "rb")
     dds.seek(0xC)
