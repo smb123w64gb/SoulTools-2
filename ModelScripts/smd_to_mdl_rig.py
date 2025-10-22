@@ -75,6 +75,8 @@ def applyTransform_norm(vertex,bone_idx,bonez):
     transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
     chain = []
     while(next_bone != 255):
+
+           
         bon = bonez[next_bone]
         
         chain.append(next_bone)
@@ -110,6 +112,7 @@ class VXTProto(object):
             self.nor = [0.0]*3
             self.uvs = [0.0]*2
             self.wght = 1.0 
+            self.idx = 0
         def __str__(self):
              rt = ''
              rt += str("POS:%f,%f,%f\n"%(self.pos[0],self.pos[1],self.pos[2]))
@@ -140,6 +143,12 @@ mdl_file.close()
 riggedBuff = []
 staticBuffPOSNOR = []
 staticBuffUVSCOL = []
+
+boneindx = {}
+for x in mdl.boneInfo:
+    if(x.BoneNameOffset>0):
+        boneindx[x.Name] = x
+
 for idy,y in inModel.merged_list.items():
     binds = {}
     vtnr = sc2m.VM.WeightTable.BufferScaleVertex()
@@ -157,6 +166,10 @@ for idy,y in inModel.merged_list.items():
             vt.nor = y.nor
             vt.uvs = y.uvs
             vt.wght = z
+            for bidx,b in enumerate(mdl.boneInfo):
+                if b.BoneIdx == boneindx[idz]:
+                    vt.idx = bidx
+
             binds[idz] = vt
     riggedBuff.append(binds)
 
@@ -192,10 +205,7 @@ for xx,idx in inModel.mesh_original.items():
 
 
 
-boneindx = {}
-for x in mdl.boneInfo:
-    if(x.BoneNameOffset>0):
-        boneindx[x.Name] = x
+
 
 
 finalPosWgt = []
@@ -221,15 +231,15 @@ for xx in riggedBuff:
     for idx,x in xx.items():
         
         bone = boneindx[idx]
-        updatedPos = applyTransform(x.pos,bone.BoneIdx,mdl.boneInfo)
-        updatedNor = applyTransform_norm(x.nor,bone.BoneIdx,mdl.boneInfo)
+        updatedPos = applyTransform(x.pos,x.idx,mdl.boneInfo)
+        updatedNor = applyTransform_norm(x.nor,x.idx,mdl.boneInfo)
         if(len(xx)>1):
             updatedPos = [(updatedPos[0]*x.wght),(updatedPos[1]*x.wght),(updatedPos[2]*x.wght)]
         wgt = sc2m.VM.WeightTable.WeightDef()
         wgt.Pos = updatedPos
         wgt.Nor = updatedNor
         wgt.bWgt = x.wght
-        wgt.bIdx = bone.BoneIdx
+        wgt.bIdx = x.idx
         wgtz.append(wgt)
     weghtsub.append(wgtz)
 finalPosWgt.append(weghtsub)
