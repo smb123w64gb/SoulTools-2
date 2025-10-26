@@ -167,7 +167,7 @@ for idy,y in inModel.merged_list.items():
             vt.uvs = y.uvs
             vt.wght = z
             for bidx,b in enumerate(mdl.boneInfo):
-                if b.BoneIdx == boneindx[idz]:
+                if b.BoneIdx == boneindx[idz].BoneIdx:
                     vt.idx = bidx
 
             binds[idz] = vt
