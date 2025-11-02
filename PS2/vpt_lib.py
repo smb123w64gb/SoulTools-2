@@ -1,4 +1,5 @@
 import struct
+from ctypes import *
 
 def u8(file):
     return struct.unpack("B", file.read(1))[0]
@@ -28,7 +29,49 @@ def w8(file,val):
     file.write(struct.pack("B", val))
 
 
-class VTX(object):
+
+
+class Dma_Tag(object):
+    tag_names = ["P2_DMA_TAG_REFE","P2_DMA_TAG_CNT","P2_DMA_TAG_NEXT","P2_DMA_TAG_REF","P2_DMA_TAG_REFS","P2_DMA_TAG_CALL","P2_DMA_TAG_RET","P2_DMA_TAG_END"]
+    class Dma_Tag_Header(Union):
+        class Dma_Tag_bits(LittleEndianStructure):
+                _fields_ = [
+                        ("QWC", c_uint16, 16),
+                        ("PAD", c_uint16, 10),
+                        ("PCE", c_uint8, 2),
+                        ("ID", c_uint8, 3),
+                        ("IRQ", c_uint8, 1),
+                        ("ADDR", c_uint32, 31),
+                        ("SPR", c_uint8, 1),
+                    ]
+        _fields_ = [("b", Dma_Tag_bits),
+                    ("asbyte", c_uint64)]
+    def __init__(self):
+        self.bits = self.Dma_Tag_Header()
+        self.bits.asbyte = 0
+        self.OPT1 = 0
+        self.OPT2 = 0
+    def read(self,f):
+        self.bits.asbyte = u64(f)
+        self.OPT1 = u32()
+        self.OPT2 = u32()
+    def write(self,f):
+        w64(f,self.bits.asbyte)
+        w32(f,self.OPT1)
+        w32(f,self.OPT2)
+    def __str__(self):
+        return str('%s',self.tag_names[self.bits.b.ID])
+
+
+
+
+
+class VTP(object):
+    def __init__(self):
+        self.header = self.Header()
+        self.dma_ents = []
+    def read(self,f):
+        self.header.read(f)
     class Header(object):
         def __init__(self):
             self.Magic = 2
@@ -42,6 +85,16 @@ class VTX(object):
             self.creditsTwo = 0
             self.extendOffsetOne = 0
             self.extendOffsetTwo = 0
+        def __str__(self):
+            stringout = ''
+            stringout+= str('VTP Ver %i\n' % self.Magic)
+            stringout+=str('Offset Count %i\n' % self.offsetCount)
+            stringout+=str('DMA offset @ %i\n' % self.offset2DMAs)
+            stringout+=str('DMA Chain Count %i\n' % self.dmaCount)
+
+            stringout+=str('\nTexture Count %i\n' % self.textureCount)
+            return stringout
+
         def read(self,f):
             self.Magic = u8(f)
             self.offset2DMAs = u8(f)
