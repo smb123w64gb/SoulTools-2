@@ -27,44 +27,34 @@ def w16(file,val):
 
 def w8(file,val):
     file.write(struct.pack("B", val))
-
-
-
-
+class Dma_Tag_bits(Structure):
+    _fields_ = [
+            ("QWC", c_uint, 16),
+            ("PAD", c_uint, 10),
+            ("PCE", c_uint, 2),
+            ("ID", c_uint, 3),
+            ("IRQ", c_uint, 1),
+            ("ADDR", c_uint, 31),
+            ("SPR", c_uint, 1),
+        ]
 class Dma_Tag(object):
     tag_names = ["P2_DMA_TAG_REFE","P2_DMA_TAG_CNT","P2_DMA_TAG_NEXT","P2_DMA_TAG_REF","P2_DMA_TAG_REFS","P2_DMA_TAG_CALL","P2_DMA_TAG_RET","P2_DMA_TAG_END"]
-    class Dma_Tag_Header(Union):
-        class Dma_Tag_bits(LittleEndianStructure):
-                _fields_ = [
-                        ("QWC", c_uint16, 16),
-                        ("PAD", c_uint16, 10),
-                        ("PCE", c_uint8, 2),
-                        ("ID", c_uint8, 3),
-                        ("IRQ", c_uint8, 1),
-                        ("ADDR", c_uint32, 31),
-                        ("SPR", c_uint8, 1),
-                    ]
-        _fields_ = [("b", Dma_Tag_bits),
-                    ("asbyte", c_uint64)]
     def __init__(self):
-        self.bits = self.Dma_Tag_Header()
-        self.bits.asbyte = 0
+        self.bits = Dma_Tag_bits()
         self.OPT1 = 0
         self.OPT2 = 0
     def read(self,f):
-        self.bits.asbyte = u64(f)
-        self.OPT1 = u32()
-        self.OPT2 = u32()
+        self.bits = Dma_Tag_bits.from_buffer_copy(f.read(8))
+        self.OPT1 = u32(f)
+        self.OPT2 = u32(f)
     def write(self,f):
         w64(f,self.bits.asbyte)
         w32(f,self.OPT1)
         w32(f,self.OPT2)
     def __str__(self):
-        return str('%s',self.tag_names[self.bits.b.ID])
-
-
-
-
+        sring = ''
+        sring += str("%s,Offset:%s"%(self.tag_names[self.bits.ID],hex(self.bits.ADDR)))
+        return sring
 
 class VTP(object):
     def __init__(self):
@@ -72,6 +62,11 @@ class VTP(object):
         self.dma_ents = []
     def read(self,f):
         self.header.read(f)
+        f.seek(self.header.dmaTableHeader)
+        for x in range(self.header.dmaCount):
+            entrys = self.DMATable()
+            entrys.read(f)
+            self.dma_ents.append(entrys)
     class Header(object):
         def __init__(self):
             self.Magic = 2
@@ -130,31 +125,28 @@ class VTP(object):
                 self.offset = 0x20
                 self.count = 0
                 self.magic = 0x2C40
-                self.unk = 0
+                self.unk = 0 #SC3 Specal
             def read(self,f):
                 self.offset = u64(f)
                 self.count = u16(f)
                 self.magic = u16(f)
-                self.unk = u64(f)
             def write(self,f):
                 w64(self.offset)
                 w16(self.count)
                 w16(self.magic)
-                w64(self.unk)
         def __init__(self):
             self.TableHeader = self.DMATableHeader()
-            self.Offsets = []
+            self.DMAChains = []
         def read(self,f):
             self.TableHeader.read(f)
             ret = f.tell()
             f.seek(self.TableHeader.offset)
             for x in range(self.TableHeader.count):
-                tag = u32(f)
-                offset = u32(f)
-                extraTag = u64(f)
-                self.Offsets.append(offset)
+                tag = Dma_Tag()
+                tag.read(f)
+                self.DMAChains.append(tag)
             #end Tag why not
-            tag = u32(f)
-            offset = u32(f)
-            extraTag = u64(f)
+            tag = Dma_Tag()
+            tag.read(f)
+            self.DMAChains.append(tag)
             f.seek(ret)
