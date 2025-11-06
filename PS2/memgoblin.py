@@ -70,6 +70,7 @@ class MemBuff(object):
         self.space_alloted = 0
         self.space_used = 0
         self.space_left = 0
+
     def __str__(self,basic = False):
         strpit = ''
         if(self.used==0xFFFF):
@@ -112,8 +113,8 @@ class MemBuff(object):
         offset += 4
         self.space_left = libipc.pine_read(pinIN, offset, c_char(2), False)
         offset += 4
+#Euro SC3 2.0
 
-value = 1
 base_offset = 0x4F3898
 arrayOfBuff = []
 for x in range(20):
@@ -121,9 +122,30 @@ for x in range(20):
     arrayOfBuff.append(test)
     base_offset += 0x38
 while(1):
+    total = 0.0
     os.system('cls')
     for test in arrayOfBuff:
         test.read(ipc)
         print(test.__str__(True))
+        total += bytes_to_mib(test.space_used)
+    print("Total Used space %02.02f Mib" % total)
     time.sleep(1)
 
+#NTSC SC2
+'''
+base_offset = 0x3F55B0
+arrayOfBuff = []
+for x in range(18):
+    test = MemBuff(base_offset)
+    arrayOfBuff.append(test)
+    base_offset += 0x38
+while(1):
+    total = 0.0
+    os.system('cls')
+    for test in arrayOfBuff:
+        test.read(ipc)
+        print(test.__str__(True))
+        total += bytes_to_mib(test.space_used)
+    print("Total Used space %02.02f Mib" % total)
+    time.sleep(1)
+'''
