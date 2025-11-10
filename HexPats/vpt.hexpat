@@ -144,8 +144,9 @@ struct TextureEntry{
     TextureSlice slices[2];
     u32 footer[4];
     trueCountTextures = trueCountTextures + 1;
-    u32 tex[slices[0].PalletLen] @ slices[0].PalletOffset+offsetto;
-    u32 pal[slices[1].PalletLen] @ slices[1].PalletOffset+offsetto;
+    //Lets use what the DMA uses!
+    u128 tex[slices[0].UNK0] @ slices[0].PalletOffset+offsetto;
+    u128 pal[slices[1].UNK0] @ slices[1].PalletOffset+offsetto;
 };
 struct DimentionEnt{
     u8 stuff[0x20];
