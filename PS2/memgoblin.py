@@ -44,14 +44,108 @@ ValidIDs = [0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x0B,0x0C,0x0D,0x0E,0x0F,0x1
 Address = c_uint(0x4BA062)
 AddressUS1 = c_uint(0x4B4862)
 
-value = 1
-random.seed(time.time())
-while(1):
-    os.system('cls')
-    print("Transforming into %i" % ValidIDs[value])
-    curchar = libipc.pine_read(ipc, AddressUS1, c_char(0), False)
-    print("Cur char id was:%i"%curchar)
-    libipc.pine_write(ipc,AddressUS1,ValidIDs[value],c_char(4),False)
-    value = random.randint(0,len(ValidIDs)-1)
-    time.sleep(10)
+'''
+0 = Read u8
+1 = Read u16
+2 = Read u32
+3 = Read u64
 
+4 = Write u8
+5 = Write u16
+6 = Write u32
+7 = Write u64
+'''
+def bytes_to_mib(bytes_value):
+    mib_value = bytes_value / (1024 * 1024)
+    return mib_value
+
+class MemBuff(object):
+    def __init__(self,memoryoffset):
+        self.MEM_OFFSET = memoryoffset
+        self.used = -1
+        self.index = 0
+        self.name = ''
+        self.offset_head = 0
+        self.offset_end = 0
+        self.space_alloted = 0
+        self.space_used = 0
+        self.space_left = 0
+
+    def __str__(self,basic = False):
+        strpit = ''
+        if(self.used==0xFFFF):
+            return 'NO DATA\n'
+        strpit += str("Used: %i\t Index: %02i\n"% (self.used,self.index))
+        strpit += str("name: %s\n"% self.name)
+        strpit += str("Offset Range %s - %s\n"% (hex(self.offset_head),hex(self.offset_end)))
+        if(basic):
+            strpit += str("Data Used %02.02f MiB / %02.02f MiB\n"% (bytes_to_mib(self.space_used),bytes_to_mib(self.space_alloted)))
+            strpit += str("Avalable %02.02f MiB\n"% bytes_to_mib(self.space_left))
+        else:
+            strpit += str("Data Used %s / %s\n"% (hex(self.space_used),hex(self.space_alloted)))
+            strpit += str("Avalable %s\n"% hex(self.space_left))
+        return strpit
+    def read(self,pinIN):
+        offset = self.MEM_OFFSET
+        self.used = libipc.pine_read(pinIN, offset, c_char(1), False)
+        offset+=2
+        self.index = libipc.pine_read(pinIN, offset, c_char(1), False)
+        offset+=2
+        strlen = 32
+        result = ""
+        tmpChar = bytes(c_char(libipc.pine_read(pinIN, offset, c_char(0), False)))
+        strlen -=1
+        offset+=1
+        while ord(tmpChar) != 0 and strlen > 0:
+            result += tmpChar.decode("shift_jis")
+            tmpChar = bytes(c_char(libipc.pine_read(pinIN, offset, c_char(0), False)))
+            strlen -=1
+            offset+=1
+        self.name = result
+        offset += strlen
+        self.offset_head = libipc.pine_read(pinIN, offset, c_char(2), False)
+        offset += 4
+        self.offset_end = libipc.pine_read(pinIN, offset, c_char(2), False)
+        offset += 4
+        self.space_alloted = libipc.pine_read(pinIN, offset, c_char(2), False)
+        offset += 4
+        self.space_used = libipc.pine_read(pinIN, offset, c_char(2), False)
+        offset += 4
+        self.space_left = libipc.pine_read(pinIN, offset, c_char(2), False)
+        offset += 4
+#Euro SC3 2.0
+
+base_offset = 0x4F3898
+arrayOfBuff = []
+for x in range(20):
+    test = MemBuff(base_offset)
+    arrayOfBuff.append(test)
+    base_offset += 0x38
+while(1):
+    total = 0.0
+    os.system('cls')
+    for test in arrayOfBuff:
+        test.read(ipc)
+        print(test.__str__(True))
+        total += bytes_to_mib(test.space_used)
+    print("Total Used space %02.02f Mib" % total)
+    time.sleep(1)
+
+#NTSC SC2
+'''
+base_offset = 0x3F55B0
+arrayOfBuff = []
+for x in range(18):
+    test = MemBuff(base_offset)
+    arrayOfBuff.append(test)
+    base_offset += 0x38
+while(1):
+    total = 0.0
+    os.system('cls')
+    for test in arrayOfBuff:
+        test.read(ipc)
+        print(test.__str__(True))
+        total += bytes_to_mib(test.space_used)
+    print("Total Used space %02.02f Mib" % total)
+    time.sleep(1)
+'''
