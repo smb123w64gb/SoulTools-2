@@ -1,5 +1,6 @@
 import struct
 from ctypes import *
+from enum import auto, Enum
 
 def u8(file):
     return struct.unpack("B", file.read(1))[0]
@@ -37,8 +38,17 @@ class Dma_Tag_bits(Structure):
             ("ADDR", c_uint, 31),
             ("SPR", c_uint, 1),
         ]
+class DMA_Tag_Type(Enum):
+    P2_DMA_TAG_REFE = 0
+    P2_DMA_TAG_CNT = 1
+    P2_DMA_TAG_NEXT = 2
+    P2_DMA_TAG_REF = 3
+    P2_DMA_TAG_REFS = 4
+    P2_DMA_TAG_CALL = 5
+    P2_DMA_TAG_RET = 6
+    P2_DMA_TAG_END = 7
+
 class Dma_Tag(object):
-    tag_names = ["P2_DMA_TAG_REFE","P2_DMA_TAG_CNT","P2_DMA_TAG_NEXT","P2_DMA_TAG_REF","P2_DMA_TAG_REFS","P2_DMA_TAG_CALL","P2_DMA_TAG_RET","P2_DMA_TAG_END"]
     def __init__(self):
         self.bits = Dma_Tag_bits()
         self.OPT1 = 0
@@ -53,7 +63,7 @@ class Dma_Tag(object):
         w32(f,self.OPT2)
     def __str__(self):
         sring = ''
-        sring += str("%s,Offset:%s"%(self.tag_names[self.bits.ID],hex(self.bits.ADDR)))
+        sring += str("%s,Offset:%s"%(DMA_Tag_Type(self.bits.ID).name,hex(self.bits.ADDR)))
         return sring
 
 class VTP(object):
@@ -119,6 +129,10 @@ class VTP(object):
             w32(f,self.creditsTwo)
             w32(f,self.extendOffsetOne)
             w32(f,self.extendOffsetTwo)
+    class UploadInfo(object):
+        def __init__(self):
+            headTag = Dma_Tag()
+            
     class DMATable(object):
         class DMATableHeader(object):
             def __init__(self):
