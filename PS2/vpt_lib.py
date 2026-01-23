@@ -28,6 +28,12 @@ def w16(file,val):
 
 def w8(file,val):
     file.write(struct.pack("B", val))
+def read_return(file,offset,size):
+    ret = file.tell()
+    file.seek(offset)
+    data = file.read(size)
+    file.seek(ret)
+    return data
 class Dma_Tag_bits(Structure):
     _fields_ = [
             ("QWC", c_uint, 16),
@@ -53,17 +59,38 @@ class Dma_Tag(object):
         self.bits = Dma_Tag_bits()
         self.OPT1 = 0
         self.OPT2 = 0
+        self.next = None
+        self.data = None
     def read(self,f):
         self.bits = Dma_Tag_bits.from_buffer_copy(f.read(8))
         self.OPT1 = u32(f)
         self.OPT2 = u32(f)
+        ret = f.tell()
+        if(DMA_Tag_Type(self.bits.ID) == DMA_Tag_Type.P2_DMA_TAG_CALL):
+            f.seek(self.bits.ADDR)
+            tag = Dma_Tag()
+            tag.read(f)
+            self.next = tag
+        elif(DMA_Tag_Type(self.bits.ID) == DMA_Tag_Type.P2_DMA_TAG_CNT):
+            self.data = f.read(self.bits.QWC*16)
+            tag = Dma_Tag()
+            tag.read(f)
+            self.next = tag
+        elif(DMA_Tag_Type(self.bits.ID) == DMA_Tag_Type.P2_DMA_TAG_REF):
+            self.data = read_return(f,self.bits.ADDR,self.bits.QWC*16)
+            tag = Dma_Tag()
+            tag.read(f)
+            self.next = tag
+        f.seek(ret)
+        
+
     def write(self,f):
         w64(f,self.bits.asbyte)
         w32(f,self.OPT1)
         w32(f,self.OPT2)
     def __str__(self):
         sring = ''
-        sring += str("%s,Offset:%s"%(DMA_Tag_Type(self.bits.ID).name,hex(self.bits.ADDR)))
+        sring += str("%s,Offset:@ %s Transfer %s"%(DMA_Tag_Type(self.bits.ID).name,hex(self.bits.ADDR),hex(self.bits.QWC*16)))
         return sring
 
 class VTP(object):

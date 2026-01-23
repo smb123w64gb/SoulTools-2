@@ -21,7 +21,7 @@ data = bytearray()
 firstpass = []
 for x in range(height):
     for y in range(width):
-        firstpass.append(png.getpixel((y,x)))
+        firstpass.append(png.getpixel((x,y)))
 png.close()
 unsizzled = swizzle.swizzle_rect(firstpass,width,height,width,1)
 
