@@ -92,7 +92,7 @@ class Dma_Tag(object):
         sring = ''
         sring += str("%s,Offset:@ %s Transfer %s"%(DMA_Tag_Type(self.bits.ID).name,hex(self.bits.ADDR),hex(self.bits.QWC*16)))
         return sring
-
+isThree = False
 class VTP(object):
     def __init__(self):
         self.header = self.Header()
@@ -129,6 +129,9 @@ class VTP(object):
 
         def read(self,f):
             self.Magic = u8(f)
+            if(self.Magic == 3):
+                global isThree
+                isThree = True
             self.offset2DMAs = u8(f)
             self.offsetCount = u8(f)
             u8(f)
@@ -171,10 +174,16 @@ class VTP(object):
                 self.offset = u64(f)
                 self.count = u16(f)
                 self.magic = u16(f)
+                global isThree
+                if(isThree):
+                   self.unk = u64(f) 
             def write(self,f):
                 w64(self.offset)
                 w16(self.count)
                 w16(self.magic)
+                global isThree
+                if(isThree):
+                    w64(self.unk)
         def __init__(self):
             self.TableHeader = self.DMATableHeader()
             self.DMAChains = []
