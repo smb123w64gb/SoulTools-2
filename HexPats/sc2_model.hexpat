@@ -248,7 +248,7 @@ struct mdl_header{
     console ConsoleVersion;
     u8 textureOffsetPoint;
     u8 textureCount;
-    u8 isNotTexture;
+    u8 isLoaded;
     u8 unk;
     modelContent Contents;
     u16 MatricesCount;

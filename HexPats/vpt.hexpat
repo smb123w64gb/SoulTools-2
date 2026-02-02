@@ -83,7 +83,53 @@ bitfield GS_TEX0 {
     clut_loadmode   :3;
 
 };
-
+bitfield GS_BITBLTBUF {
+    src_addr      :14;
+    pad1          :2;
+    src_width     :6;
+    pad2          :2;
+    src_pixmode :6;
+    pad3          :2;
+    dest_addr     :14;
+    pad4          :2;
+    dest_width  :6;
+    pad5          :2;
+    dest_pixmode:6;
+    pad6          :2;
+};
+bitfield GS_TRXPOS {
+    src_x       :11;
+    pad1        :5;
+    src_y       :11;
+    pad2        :5;
+    dest_x  :11;
+    pad3        :5;
+    dest_y  :11;
+    direction   :2;
+    pad4        :3;
+};
+bitfield GS_TRXREG {
+    trans_w :12;
+    pad1        :20;
+    trans_h :12;
+    pad2        :20;
+};
+bitfield GS_TRXDIR {
+    trans_dir   :2;
+    pad1        :62;
+};
+bitfield GS_PRIM {
+    prim_type   :3;
+    iip     :1;
+    tme     :1;
+    fge     :1;
+    abe     :1;
+    aa1     :1;
+    fst     :1;
+    ctxt        :1;
+    fix     :1;
+    pad1        :53;
+};
 bitfield dma_tag_t
 {
     /** Quadword count. */
@@ -120,6 +166,73 @@ bitfield dma_tag_t
      OPT1 : 32;
      OPT2 : 32;
 };
+bitfield GS_GIF_TAG {
+    nloop   :15;
+    eop :1;
+    pad1    :30;
+    pre :1;
+    prim    :11;
+    flg :2;
+    nreg    :4;
+    u64 reg;
+};
+enum GS_TYPE : u64{
+GS_PRIM = 0X00,
+GS_RGBAQ = 0X01,
+GS_ST = 0X02,
+GS_UV = 0X03,
+GS_XYZF2 = 0X04,
+GS_XYZ2 = 0X05,
+GS_TEX0_1 = 0X06,
+GS_TEX0_2 = 0X07,
+GS_CLAMP_1 = 0X08,
+GS_CLAMP_2 = 0X09,
+GS_FOG = 0X0A,
+GS_XYZF3 = 0X0C,
+GS_XYZ3 = 0X0D,
+GS_TEX1_1 = 0X14,
+GS_TEX1_2 = 0X15,
+GS_TEX2_1 = 0X16,
+GS_TEX2_2 = 0X17,
+GS_XYOFFSET_1 = 0X18,
+GS_XYOFFSET_2 = 0X19,
+GS_PRMODECONT = 0X1A,
+GS_PRMODE = 0X1B,
+GS_TEXCLUT = 0X1C,
+GS_SCANMSK = 0X22,
+GS_MIPTBP1_1 = 0X34,
+GS_MIPTBP1_2 = 0X35,
+GS_MIPTBP2_1 = 0X36,
+GS_MIPTBP2_2 = 0X37,
+GS_TEXA = 0X3B,
+GS_FOGCOL = 0X3D,
+GS_TEXFLUSH = 0X3F,
+GS_SCISSOR_1 = 0X40,
+GS_SCISSOR_2 = 0X41,
+GS_ALPHA_1 = 0X42,
+GS_ALPHA_2 = 0X43,
+GS_DIMX = 0X44,
+GS_DTHE = 0X45,
+GS_COLCLAMP = 0X46,
+GS_TEST_1 = 0X47,
+GS_TEST_2 = 0X48,
+GS_PABE = 0X49,
+GS_FBA_1 = 0X4A,
+GS_FBA_2 = 0X4B,
+GS_FRAME_1 = 0X4C,
+GS_FRAME_2 = 0X4D,
+GS_ZBUF_1 = 0X4E,
+GS_ZBUF_2 = 0X4F,
+GS_BITBLTBUF = 0X50,
+GS_TRXPOS = 0X51,
+GS_TRXREG = 0X52,
+GS_TRXDIR = 0X53,
+GS_HWREG = 0X54,
+GS_SIGNAL = 0X60,
+GS_FINISH = 0X61,
+GS_LABEL = 0X62,
+GS_NOP = 0X7F
+}
 
 struct addressTable{
     dma_tag_t values[while(std::mem::read_unsigned($, 4) != 0x60000000)];
@@ -129,7 +242,9 @@ struct Pallet{
     u32 color[256];
 };
 struct TextureSlice{
-    u32 stuff[24];
+    u32 stuff[4];
+    GS_GIF_TAG gif_tag;
+    u32 stuff2[16];
     u32 PalletLen;
     u32 count;
     padding[8];
@@ -179,7 +294,7 @@ padding[8];
 //u32 address5;
 //u32 testa5 @ offsetto+address5;
 //textable *texturesAlt[textureCount] : u32;
-u32 trueDmaCount = dmaCount ? dmaCount * 2 : (offsetCount == 6) ;
+u32 trueDmaCount = dmaCount;
 u32 trueTextureCount = textureCount ? textureCount * 2 : (offsetCount == 6) ;
 addressTable textureInfo[trueDmaCount];
 TextureEntry textEnt[while(std::mem::read_unsigned($, 4) == 268435462)];

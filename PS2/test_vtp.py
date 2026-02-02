@@ -17,11 +17,13 @@ for x in vpt.dma_ents:
         inner += 1
         in_inner = 0
         print(y)
-        next = y.next
+        next : vpt_lib.Dma_Tag = y.next
         while(next is not None):
             in_inner += 1
             print("\t%s"%next)
-            if(next.data is not None):
-                out = open(sys.argv[1] + str("%03i_%03i_%03i.bin" %(outer,inner,in_inner)),'wb')
-                out.write(next.data)
+            if(next.data is not None and next.bits.ID == vpt_lib.DMA_Tag_Type.P2_DMA_TAG_CNT.value):
+                for chunk in (next.data[i:i+0x10] for i in range(0,len(next.data),0x10)):
+                    testronly = vpt_lib.Gif_Tag()
+                    testronly.readbuf(chunk)
+                    print(testronly)
             next = next.next
