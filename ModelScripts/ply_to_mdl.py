@@ -165,7 +165,7 @@ new_matrixes = []
 for indx,x in enumerate(mdl.boneInfo):
     if(len(x.Name)>0):
         clean = copy.copy(cloned_matrix)
-        clean.Type = 2
+        clean.Type = 1
         clean.ParentBoneIdx = indx
         new_matrixes.append(clean)
 
@@ -189,13 +189,10 @@ mdl.materials = []
 mdl.wgtTbl = mdl.WeightTable()
 mdl.header.WeightTableCount = 0
 for idx,x in enumerate(ply_mdls):
-    mdl_lay = x.toVMX()
     curmat = copy.deepcopy(newmat)
-    for y in mdl_lay.StaticVerts:
-        y.Position = applyTransform(y.Position,x.boneIdx,mdl.boneInfo,True)
-        y.Normal = applyTransform_norm(y.Normal,x.boneIdx,mdl.boneInfo,True)
+    mdl_lay = x.toVMX()
     curmat.TextureIdx0 = idx
-    mdl.materials.append(newmat)
+    mdl.materials.append(curmat)
     mdl_lay.MaterialIndex = idx
     mdl_lay.MatrixIndex = idx
 
@@ -204,4 +201,3 @@ for idx,x in enumerate(ply_mdls):
 
 mdl_file = open(sys.argv[3], "wb")
 mdl.write(mdl_file)
-mdl_file.close()
