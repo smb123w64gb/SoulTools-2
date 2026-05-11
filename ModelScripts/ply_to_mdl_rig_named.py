@@ -65,7 +65,12 @@ class Model(object):
         newOBJ.StaticVerts = static_arr
         newOBJ.PrimitiveType = 1
         return newOBJ 
+mdl_file = open(sys.argv[2], "rb")
 
+mdl = model_fmt_sc2.VM()
+
+mdl.read(mdl_file)
+mdl_file.close()
 ply_mdls = []
 files = os.listdir(sys.argv[1])
 files = [ fi for fi in files if fi.lower().endswith(".ply") ]
@@ -75,9 +80,12 @@ for y in files:
     polyCount = 0
     start_read = False
     mdl_txt = Model()
-    boneLoc = y.lower().find("bone")
-    print(y[boneLoc+4:boneLoc+3+4])
-    mdl_txt.boneIdx = int(y[boneLoc+4:boneLoc+3+4])
+    boneLoc = y.lower().find(".ply")
+    lenStr = len(y) - boneLoc
+    BoneName = y[0:len(y)-4]
+    results = [item for item in mdl.boneInfo if item.Name == BoneName]
+    mdl_txt.boneIdx = results[0].BoneIdx
+    print(BoneName)
     for x in obj_file.readlines():
         if(start_read):
             if(vertCount):
@@ -93,20 +101,19 @@ for y in files:
         if(x.find('end_header')==0):
             start_read = True
     ply_mdls.append(mdl_txt)
-bone_idxes_fixup = [3,1,12,13,14,15,17,18,19,5,6,7,9,10,11,112,110]
+texturefix = [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0]
 
-def applyTransform(vertex,bone_idx,bonez,skipchain = False):
+def applyTransform(vertex,bone_idx,bonez):
     next_bone = bone_idx
     transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
-    if(skipchain):chain = [next_bone]
-    else:
-        chain = []
-        while(next_bone != 255):
-            bon = bonez[next_bone]
-            
-            chain.append(next_bone)
-            next_bone = bon.BoneParentIdx
-        chain.reverse()
+    chain = []
+    while(next_bone != 255):
+        bon = bonez[next_bone]
+        
+        chain.append(next_bone)
+        next_bone = bon.BoneParentIdx
+    chain.reverse()
+    onceler = True
     for x in chain:
         bon = bonez[x]
         
@@ -115,6 +122,12 @@ def applyTransform(vertex,bone_idx,bonez,skipchain = False):
         e = [x for x in e]
         r = mathutils.Euler((e[0],e[1],e[2]))
         r = r.to_matrix()
+        if(bon.boneType == 3 and False):
+            mat_rotY = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Y')
+            mat_rotZ = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Z')
+            mat_rotate = (mat_rotY @ mat_rotZ)
+            onceler = False
+            r.rotate(mat_rotate)
         r.invert()
         
         tra = mathutils.Vector((-bon.StartPositionXYZScale[0],-bon.StartPositionXYZScale[1],-bon.StartPositionXYZScale[2]))
@@ -123,19 +136,19 @@ def applyTransform(vertex,bone_idx,bonez,skipchain = False):
         
     loc = transforms
     return (loc[0],loc[1],loc[2])
-def applyTransform_norm(vertex,bone_idx,bonez,skipchain = False):
+def applyTransform_norm(vertex,bone_idx,bonez):
     next_bone = bone_idx
     transforms = mathutils.Vector((vertex[0],vertex[1],vertex[2]))
-    if(skipchain):chain = [next_bone]
-    else:
-        chain = []
-        while(next_bone != 255):
-            bon = bonez[next_bone]
-            
-            chain.append(next_bone)
-            next_bone = bon.BoneParentIdx
-        chain.reverse()
+    chain = []
+    while(next_bone != 255):
+
+           
+        bon = bonez[next_bone]
+        
+        chain.append(next_bone)
+        next_bone = bon.BoneParentIdx
     chain.reverse()
+    onceler = True
     for x in chain:
         bon = bonez[x]
         
@@ -144,18 +157,19 @@ def applyTransform_norm(vertex,bone_idx,bonez,skipchain = False):
         e = [x for x in e]
         r = mathutils.Euler((e[0],e[1],e[2]))
         r = r.to_matrix()
+        if(bon.boneType == 3 and False):
+            mat_rotY = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Y')
+            mat_rotZ = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Z')
+            mat_rotate = (mat_rotY @ mat_rotZ)
+            onceler = False
+            r.rotate(mat_rotate)
         r.invert()
         transforms.rotate(r)
         
     loc = transforms
     return (loc[0],loc[1],loc[2])
 
-mdl_file = open(sys.argv[2], "rb")
 
-mdl = model_fmt_sc2.VM()
-
-mdl.read(mdl_file)
-mdl_file.close()
 
 #get our matrixes up
 cloned_matrix = copy.deepcopy(mdl.matrix_table[0])
@@ -176,8 +190,9 @@ newmat = copy.deepcopy(mdl.materials[0])
 newmat.TextureIdx0 = 0
 newmat.TextureIdx1 = None
 newmat.TextureIdx2 = None
-newmat.Type = 2
-newmat.OpacitySrc = 0
+newmat.Type = 3
+newmat.OpacitySrc = 1
+#newmat.CullMode = 0
 #mdl.materials[0] = newmat
 #mdl.materials = mdl.materials[:1]
 
@@ -192,14 +207,17 @@ for idx,x in enumerate(ply_mdls):
     mdl_lay = x.toVMX()
     curmat = copy.deepcopy(newmat)
     for y in mdl_lay.StaticVerts:
-        y.Position = applyTransform(y.Position,x.boneIdx,mdl.boneInfo,True)
-        y.Normal = applyTransform_norm(y.Normal,x.boneIdx,mdl.boneInfo,True)
-    curmat.TextureIdx0 = idx
-    mdl.materials.append(newmat)
+        y.Position = applyTransform(y.Position,x.boneIdx,mdl.boneInfo)
+        y.Normal = applyTransform_norm(y.Normal,x.boneIdx,mdl.boneInfo)
+    curmat.TextureIdx0 = texturefix[idx]
+    curmat.OpacitySrc += texturefix[idx]
+    mdl.materials.append(curmat)
     mdl_lay.MaterialIndex = idx
-    mdl_lay.MatrixIndex = idx
-
-    mdl.Object_0.append(mdl_lay)
+    mdl_lay.MatrixIndex = x.boneIdx
+    if(texturefix[idx]):
+        mdl.Object_1.append(mdl_lay)
+    else:
+        mdl.Object_0.append(mdl_lay)
 
 
 mdl_file = open(sys.argv[3], "wb")

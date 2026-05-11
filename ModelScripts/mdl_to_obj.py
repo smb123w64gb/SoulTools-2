@@ -83,12 +83,6 @@ for x in mdl.Object_0:
                 obj.write(str("v %f %f %f\n"%(y[0],y[1],y[2])))
         case 4:
             pass
-            obj.write(str("o Obj_%02i\n" % currentObj))
-            currentObj+=1
-            nextHi = len(x.RiggedVerts[1])
-            for y in x.RiggedVerts[1]:
-
-                obj.write(str("v %f %f %f\n"%(y.Position[0],y.Position[1],y.Position[2])))
     polygons = triangle_strip_to_list(x.Mesh)
     for pp in polygons:
         obj.write("f")
