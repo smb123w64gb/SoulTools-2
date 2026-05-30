@@ -251,6 +251,7 @@ class MTX(object):
 textureOffset = 0
 materixOffset = 0
 materialOffset = 0
+isCube = False
 
 
 
@@ -285,6 +286,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.MAGIC = f.read(4)
             if(self.MAGIC == b'VMG.'):
                 f.swapEndian()
+                isCube = True
                 self.Endian = True
             self.Version = f.u8()
             self.textureOffsetPoint = f.u8()
@@ -413,13 +415,27 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             idx = None
             if(offset>self.textureOffset):#0 just means there is no index
                 rel = offset - (self.textureOffset + 0x14)#Skip to where the vxt is and the header
-                idx = int(rel/0x24)
+                div = 0x24
+                if(isCube):
+                    rel-=4
+                    div = 0x44
+                idx = int(rel/div)
             return idx
+        def write_texture_offset(self,indx):
+            if(indx is None):
+                return 0
+            else:
+                muit = 0x24
+                if(isCube):
+                    muit = 0x44
+                return (self.textureOffset + (indx * muit))
+        
         def read(self,f):
-            self.Type = f.u8()
-            self.unk1 = f.u8()
-            self.unk2 = f.u8()
-            self.CullMode = f.u8()
+            value = f.u32()
+            self.Type = value & 0xFF
+            self.unk1 = (value>>8) & 0xFF
+            self.unk2 = (value>>16) & 0xFF
+            self.CullMode = (value>>24) & 0xFF
             self.OpacitySrc = f.u32()
             self.TextureIdx0 = self.calc_texture_index(f.u32())
             self.TextureIdx1 = self.calc_texture_index(f.u32())
@@ -449,25 +465,12 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             self.DiffuseRGBA = f.f32_4()
             self.SpecularRGBA = f.f32_4()
         def write(self,f):
-            f.u8(self.Type)
-            f.u8(self.unk1)
-            f.u8(self.unk2)
-            f.u8(self.CullMode)
+            value = self.Type | (self.unk1 << 8) | (self.unk2 << 16) | (self.CullMode<<24)
+            f.u32(value)
             f.u32(self.OpacitySrc)
-            if self.TextureIdx0 is  None:
-                f.u32(0)
-            else:
-                f.u32(self.textureOffset + (self.TextureIdx0*0x24))
-
-            if self.TextureIdx1 is  None:
-                f.u32(0)
-            else:
-                f.u32(self.textureOffset   + (self.TextureIdx1*0x24))
-
-            if self.TextureIdx2 is  None:
-                f.u32(0)
-            else:
-                f.u32(self.textureOffset   + (self.TextureIdx2*0x24))
+            f.u32(self.write_texture_offset(self.TextureIdx0))
+            f.u32(self.write_texture_offset(self.TextureIdx1))
+            f.u32(self.write_texture_offset(self.TextureIdx2))
             if self.TextureMap0 is  None:
                 f.u32(0)
             else:
@@ -1110,8 +1113,6 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
             f.seek(self.BoundingOffset)
             self.CenterRadius = f.f32_4()
             f.seek(ret)
-
-            
     def __init__(self):
         self.f = None
         self.header = self.Header()
@@ -1545,6 +1546,7 @@ class VM(object): #Vertex Model, Xbox = X GC = G (Example VMX,VMG so on)
                 f.u8(0)
     def toXbox(self):
         if(self.header.Endian):
+            isCube = False
             largest = 0
             newObj_0 = []
             for x in self.Object_0:
