@@ -161,13 +161,16 @@ mdl_file.close()
 cloned_matrix = copy.deepcopy(mdl.matrix_table[0])
 
 new_matrixes = []
-
-for indx,x in enumerate(mdl.boneInfo):
-    if(len(x.Name)>0):
-        clean = copy.copy(cloned_matrix)
-        clean.Type = 2
-        clean.ParentBoneIdx = indx
-        new_matrixes.append(clean)
+#Dont make unnessisary matrtixs, Just 1 per mesh
+for indx,x in enumerate(ply_mdls):
+    clean = copy.copy(cloned_matrix)
+    clean.Type = 1
+    clean.unk1 = 0
+    clean.unk2 = 0
+    clean.unk3 = 0
+    clean.unk4 = 0
+    clean.ParentBoneIdx = x.boneIdx
+    new_matrixes.append(clean)
 
 mdl.matrix_table = new_matrixes
 
@@ -195,9 +198,10 @@ for idx,x in enumerate(ply_mdls):
         y.Position = applyTransform(y.Position,x.boneIdx,mdl.boneInfo,True)
         y.Normal = applyTransform_norm(y.Normal,x.boneIdx,mdl.boneInfo,True)
     curmat.TextureIdx0 = idx
-    mdl.materials.append(newmat)
+    mdl.materials.append(curmat)
     mdl_lay.MaterialIndex = idx
     mdl_lay.MatrixIndex = idx
+    mdl_lay.CenterRadius = [-0.190399 , 633.702 , 7.27377 , 1174.01]
 
     mdl.Object_0.append(mdl_lay)
 

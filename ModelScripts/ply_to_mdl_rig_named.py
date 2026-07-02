@@ -122,7 +122,7 @@ def applyTransform(vertex,bone_idx,bonez):
         e = [x for x in e]
         r = mathutils.Euler((e[0],e[1],e[2]))
         r = r.to_matrix()
-        if(bon.boneType == 3 and False):
+        if(bon.boneType == 3 and onceler):
             mat_rotY = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Y')
             mat_rotZ = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Z')
             mat_rotate = (mat_rotY @ mat_rotZ)
@@ -157,7 +157,7 @@ def applyTransform_norm(vertex,bone_idx,bonez):
         e = [x for x in e]
         r = mathutils.Euler((e[0],e[1],e[2]))
         r = r.to_matrix()
-        if(bon.boneType == 3 and False):
+        if(bon.boneType == 3 and onceler):
             mat_rotY = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Y')
             mat_rotZ = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'Z')
             mat_rotate = (mat_rotY @ mat_rotZ)
@@ -209,15 +209,11 @@ for idx,x in enumerate(ply_mdls):
     for y in mdl_lay.StaticVerts:
         y.Position = applyTransform(y.Position,x.boneIdx,mdl.boneInfo)
         y.Normal = applyTransform_norm(y.Normal,x.boneIdx,mdl.boneInfo)
-    curmat.TextureIdx0 = texturefix[idx]
-    curmat.OpacitySrc += texturefix[idx]
+    curmat.TextureIdx0 = 0
     mdl.materials.append(curmat)
     mdl_lay.MaterialIndex = idx
     mdl_lay.MatrixIndex = x.boneIdx
-    if(texturefix[idx]):
-        mdl.Object_1.append(mdl_lay)
-    else:
-        mdl.Object_0.append(mdl_lay)
+    mdl.Object_0.append(mdl_lay)
 
 
 mdl_file = open(sys.argv[3], "wb")

@@ -14,7 +14,7 @@ mdl_file = open(sys.argv[2], "wb")
 
 mdl.Object_0 = [mdl.Object_0[-1]]
 mdl.Object_0[0].MatrixIndex = 0
-mdl.Object_0[0].MaterailIndex = 0
+mdl.Object_0[0].MaterialIndex = 0
 mdl.materials = [mdl.materials[0]]
 mdl.materials[0].TextureIdx0 = 0
 mdl.Object_1 = []

@@ -123,7 +123,7 @@ mdl.wgtTbl = mdl.WeightTable()
 mdl.header.WeightTableCount = 0
 for idx,x in enumerate(ply_mdls):
     mdl_lay = x.toVMX()
-    mdl_lay.MaterailIndex = 0
+    mdl_lay.MaterialIndex = 0
     mdl_lay.MatrixIndex = bone_idxes_fixup[idx]
     mdl.Object_0.append(mdl_lay)
 

@@ -80,7 +80,7 @@ mdl.matrix_table = mdl.matrix_table[:1]
 
 mdl_lay = mdl_txt.toVMX()
 
-mdl_lay.MaterailIndex = 0
+mdl_lay.MaterialIndex = 0
 mdl.Object_0[0] = mdl_lay
 mdl.Object_0 = mdl.Object_0[:1]
 mdl.Object_1 = []
